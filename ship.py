@@ -7,6 +7,9 @@ class Ship:
         Builds the layout of ship object
         :param dim: size of the ship layout (dim x dim grid)
         """
+        self.robot_loc = None
+        self.fire_loc = None
+        self.button_loc = None
         self.dim = dim
         self.layout, self.blocked = initialize_grid(dim)
         open_first_block(dim, self.layout, self.blocked)
@@ -24,9 +27,14 @@ class Ship:
         n_purge = get_n_purge(len(dead_ends))
         purge_half(dead_ends, self.layout, dim, n_purge)
 
-    def init_environment(self):
+    def init_environment(self, bot):
+        """
+        initializes fire, safety button, and bot onto board
+        :param bot: type of bot
+        :return: None
+        """
         loc_set = {0}
-        items = [2, 3, -1]
+        items = [2, 3, bot]
         while len(loc_set) < 4:
             i = generate_random(0, self.dim - 1)
             j = generate_random(0, self.dim - 1)
@@ -39,6 +47,12 @@ class Ship:
             items_r_index = generate_random(0, len(items) - 1)
             tup = loc_list.pop(loc_r_index)
             item = items.pop(items_r_index)
+            if item == 2:
+                self.fire_loc = tup
+            elif item == 3:
+                self.button_loc = tup
+            else:
+                self.robot_loc = tup
             self.layout[tup[0]][tup[1]] = item
 
     def print_out(self):
