@@ -2,11 +2,12 @@ import random
 
 
 class Ship:
-    def __init__(self, dim):
+    def __init__(self, dim, flamability):
         """
         Builds the layout of ship object
         :param dim: size of the ship layout (dim x dim grid)
         """
+        self.q = flamability
         self.robot_loc = None
         self.fire_loc = None
         self.button_loc = None
@@ -26,6 +27,38 @@ class Ship:
         dead_ends = find_dead_ends(self.layout, dim)
         n_purge = get_n_purge(len(dead_ends))
         purge_half(dead_ends, self.layout, dim, n_purge)
+
+    def spread_fire(self):
+        touching_fire = {0}
+        for tup in self.fire_loc:
+            i = tup[0]
+            j = tup[1]
+            if i + 1 < self.dim and self.layout[i + 1][j] != 1:
+                touching_fire.add((i + 1, j))
+            if i - 1 >= 0 and self.layout[i - 1][j] != 1:
+                touching_fire.add((i - 1, j))
+            if j + 1 < self.dim and self.layout[i][j + 1] != 1:
+                touching_fire.add((i, j + 1))
+            if j - 1 >= 0 and self.layout[i][j - 1] != 1:
+                touching_fire.add((i, j - 1))
+        touching_fire.remove(0)
+        for tup in touching_fire:
+            i = tup[0]
+            j = tup[1]
+            K = 0
+            if i + 1 < self.dim and self.layout[i + 1][j] == 2:
+                K += 1
+            if i - 1 >= 0 and self.layout[i - 1][j] == 2:
+                K += 1
+            if j + 1 < self.dim and self.layout[i][j + 1] == 2:
+                K += 1
+            if j - 1 >= 0 and self.layout[i][j - 1] == 2:
+                K += 1
+            probability = 1 - pow((1-self.q),K)
+            r = random.random()
+            if r <= probability:
+                self.layout[i][j] = 2
+                self.fire_loc.append((i,j))
 
     def init_environment(self, bot):
         """
@@ -48,7 +81,7 @@ class Ship:
             tup = loc_list.pop(loc_r_index)
             item = items.pop(items_r_index)
             if item == 2:
-                self.fire_loc = tup
+                self.fire_loc = [tup]
             elif item == 3:
                 self.button_loc = tup
             else:

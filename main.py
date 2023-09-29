@@ -5,14 +5,60 @@ BOT_1 = -1
 BOT_2 = -2
 BOT_3 = -3
 BOT_4 = -4
+SAFETY_BUTTON = 3
+FIRE = 2
 bot_set = {BOT_4, BOT_3, BOT_2, BOT_1}
 
 
+def clone_and_queue(li, q, tup):
+    """
+    helper method to clone list and append it to queue for bfs algorithm
+    :param li: list to clone
+    :param q: queue to append cloned list
+    :param tup: coordinate tup to append to cloned list
+    :return: None
+    """
+    cloned = list(li)
+    cloned.append(tup)
+    q.append(cloned)
+
+
 def save_the_ship_bot1(grid, bot_loc):
+    dim = len(grid)
     queue = deque()
     path = [bot_loc]
     queue.append(path)
-
+    sol_path = None
+    fire_start = s1.fire_loc[0]
+    while len(queue) > 0:
+        curr_path = queue.popleft()
+        loc = curr_path[-1]
+        i = loc[0]
+        j = loc[1]
+        if grid[i][j] == SAFETY_BUTTON:
+            sol_path = curr_path
+            break
+        if i + 1 < dim and grid[i + 1][j] != 1 and (i+1,j) != fire_start:
+            clone_and_queue(curr_path, queue, (i + 1, j))
+        if i - 1 >= 0 and grid[i - 1][j] != 1 and (i-1,j) != fire_start:
+            clone_and_queue(curr_path, queue, (i - 1, j))
+        if j + 1 < dim and grid[i][j + 1] != 1 and (i,j+1) != fire_start:
+            clone_and_queue(curr_path, queue, (i, j + 1))
+        if j - 1 >= 0 and grid[i][j - 1] != 1 and (i,j-1) != fire_start:
+            clone_and_queue(curr_path, queue, (i, j - 1))
+    if sol_path is None:
+        return False
+    sol_path.pop(0)
+    for t in range(len(sol_path)):
+        s1.spread_fire()
+        if sol_path[t] in s1.fire_loc:
+            s1.print_out()
+            print(" ")
+            return False
+        else:
+            grid[sol_path[t][0]][sol_path[t][1]] = BOT_1
+        s1.print_out()
+        print(" ")
     return True
 
 
@@ -32,13 +78,15 @@ if __name__ == '__main__':
     Change values here for dimension and type of bot
     """
     dimension = 5
-    robot = BOT_1
+    bot = BOT_1
+    q = 0.9
     """"""
-    if robot not in bot_set:
+    if bot not in bot_set:
         raise TypeError("Bot must have one of the following values: -1, -2, -3, or -4")
-    s1 = Ship(5)
-    s1.init_environment(robot)
+    s1 = Ship(dimension,q)
+    s1.init_environment(bot)
     s1.print_out()
+    print(" ")
     layout, robot_location = s1.layout, s1.robot_loc
-    fire_suppressed = start_world(layout, robot, robot_location)
+    fire_suppressed = start_world(layout, bot, robot_location)
     print(fire_suppressed)
