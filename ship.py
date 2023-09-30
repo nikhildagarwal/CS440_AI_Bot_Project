@@ -29,6 +29,10 @@ class Ship:
         purge_half(dead_ends, self.layout, dim, n_purge)
 
     def spread_fire(self):
+        """
+        Spreads fire to adjacent cells based on probability and flamability coefficient
+        :return: None
+        """
         touching_fire = {0}
         for tup in self.fire_loc:
             i = tup[0]
