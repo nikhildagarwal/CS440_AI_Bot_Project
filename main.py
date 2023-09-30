@@ -49,6 +49,7 @@ def save_the_ship_bot1_fringe(grid, bot_loc):
             print("T: " + str(t+1))
             s1.print_out()
             print(" ")
+            print(sol_path)
             return False
         else:
             grid[sol_path[t][0]][sol_path[t][1]] = BOT_1
@@ -57,6 +58,7 @@ def save_the_ship_bot1_fringe(grid, bot_loc):
         print("T: " + str(t + 1))
         s1.print_out()
         print(" ")
+    print(sol_path)
     return True
 
 
@@ -135,7 +137,7 @@ if __name__ == '__main__':
     Change values here for dimension and type of bot
     """
     dimension = 5
-    bot = BOT_2
+    bot = BOT_1
     q = 0.7
     """"""
     if bot not in bot_set:

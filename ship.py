@@ -10,6 +10,7 @@ class Ship:
         self.q = flamability
         self.robot_loc = None
         self.fire_loc = None
+        self.fire_neighbors = {(-1, -1)}
         self.button_loc = None
         self.dim = dim
         self.layout, self.blocked = initialize_grid(dim)
@@ -33,36 +34,50 @@ class Ship:
         Spreads fire to adjacent cells based on probability and flamability coefficient
         :return: None
         """
-        touching_fire = {0}
-        for tup in self.fire_loc:
-            i = tup[0]
-            j = tup[1]
+        if len(self.fire_neighbors) == 1:
+            i = self.fire_loc[0][0]
+            j = self.fire_loc[0][1]
             if i + 1 < self.dim and self.layout[i + 1][j] != 1:
-                touching_fire.add((i + 1, j))
+                self.fire_neighbors.add((i + 1, j))
             if i - 1 >= 0 and self.layout[i - 1][j] != 1:
-                touching_fire.add((i - 1, j))
+                self.fire_neighbors.add((i - 1, j))
             if j + 1 < self.dim and self.layout[i][j + 1] != 1:
-                touching_fire.add((i, j + 1))
+                self.fire_neighbors.add((i, j + 1))
             if j - 1 >= 0 and self.layout[i][j - 1] != 1:
-                touching_fire.add((i, j - 1))
-        touching_fire.remove(0)
-        for tup in touching_fire:
+                self.fire_neighbors.add((i, j - 1))
+        to_remove = []
+        to_add = []
+        for tup in self.fire_neighbors:
             i = tup[0]
             j = tup[1]
-            K = 0
-            if i + 1 < self.dim and self.layout[i + 1][j] == 2:
-                K += 1
-            if i - 1 >= 0 and self.layout[i - 1][j] == 2:
-                K += 1
-            if j + 1 < self.dim and self.layout[i][j + 1] == 2:
-                K += 1
-            if j - 1 >= 0 and self.layout[i][j - 1] == 2:
-                K += 1
-            probability = 1 - pow((1-self.q),K)
-            r = random.random()
-            if r <= probability:
-                self.layout[i][j] = 2
-                self.fire_loc.append((i,j))
+            if i != -1 and i != -1:
+                K = 0
+                if i + 1 < self.dim and self.layout[i + 1][j] == 2:
+                    K += 1
+                if i - 1 >= 0 and self.layout[i - 1][j] == 2:
+                    K += 1
+                if j + 1 < self.dim and self.layout[i][j + 1] == 2:
+                    K += 1
+                if j - 1 >= 0 and self.layout[i][j - 1] == 2:
+                    K += 1
+                probability = 1 - pow((1 - self.q), K)
+                r = random.random()
+                if r <= probability:
+                    self.layout[i][j] = 2
+                    self.fire_loc.append((i, j))
+                    to_remove.append((i,j))
+                    if i + 1 < self.dim and self.layout[i + 1][j] not in {1,2}:
+                        to_add.append((i + 1, j))
+                    if i - 1 >= 0 and self.layout[i - 1][j] not in {1,2}:
+                        to_add.append((i - 1, j))
+                    if j + 1 < self.dim and self.layout[i][j + 1] not in {1,2}:
+                        to_add.append((i, j + 1))
+                    if j - 1 >= 0 and self.layout[i][j - 1] not in {1,2}:
+                        to_add.append((i, j - 1))
+        for tup in to_remove:
+            self.fire_neighbors.remove(tup)
+        for tup in to_add:
+            self.fire_neighbors.add(tup)
 
     def init_environment(self, bot):
         """
@@ -248,3 +263,4 @@ def initialize_grid(dim):
         layout.append(row)
     blocked_set.remove(0)
     return layout, blocked_set
+
