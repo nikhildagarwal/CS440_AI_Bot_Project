@@ -231,8 +231,8 @@ if __name__ == '__main__':
     """
     Change values here for dimension and type of bot
     """
-    dimension = 5
-    bot = BOT_1
+    dimension = 50
+    bot = BOT_3
     q = 0.7
     """"""
     if bot not in bot_set:
