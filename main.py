@@ -13,12 +13,27 @@ bot_set = {BOT_4, BOT_3, BOT_2, BOT_1}
 
 
 def after_check_steps(i, j, curr_node,fringe):
+    """
+    Add node to fringe if fringe has not visited that node before
+    :param i: index i
+    :param j: index j
+    :param curr_node: Node that we have searched next
+    :param fringe: fringe data structure
+    :return: None
+    """
     new_tup = (i, j)
     if new_tup not in fringe.visited:
         fringe.add(Node(new_tup), curr_node, new_tup)
 
 
 def save_the_ship_bot1_fringe(grid, bot_loc):
+    """
+    Runs bfs algorithm on bot 1.
+    Generates shortest path to safety button, only avoiding the initial cell where the first started
+    :param grid: layout of ship with bot, safety button and fire all placed
+    :param bot_loc: initial location tuple of the bot
+    :return: True if bot reaches the location of the safety button, False otherwise
+    """
     fringe = Fringe(bot_loc)
     fire_start = s1.fire_loc[0]
     sol_path = []
@@ -63,6 +78,14 @@ def save_the_ship_bot1_fringe(grid, bot_loc):
 
 
 def save_the_ship_bot2_fringe(grid):
+    """
+    Runs the bfs algorithm for bot 2.
+    The bfs algorithm calculates the shortest path to the safety button, avoiding all cells which are currently on fire.
+    After each time the bot moves, it re-calculates the shortest path
+    to the safety button while avoiding all cells currently on fire
+    :param grid: layout of the ship with button, bot, and fire all placed
+    :return: True if bot reaches safety button, False otherwise
+    """
     dim = s1.dim
     signal = True
     while signal:
