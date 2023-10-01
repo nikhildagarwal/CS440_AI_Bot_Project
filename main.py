@@ -56,24 +56,27 @@ def save_the_ship_bot1_fringe(grid, bot_loc):
         if j - 1 >= 0 and grid[i][j - 1] != 1 and (i, j - 1) != fire_start:
             after_check_steps(i, j - 1, curr_node, fringe)
     if len(sol_path) == 0:
+        print("No safe path available")
         return False
     sol_path.reverse()
     for t in range(len(sol_path)):
         s1.spread_fire()
         if sol_path[t] in s1.fire_loc:
             print("T: " + str(t+1))
-            s1.print_out()
-            print(" ")
             print(sol_path)
+            grid[sol_path[t][0]][sol_path[t][1]] = "X"
+            s1.print_out()
+            print("Fire engulfed Bot")
             return False
         else:
             grid[sol_path[t][0]][sol_path[t][1]] = BOT_1
             grid[s1.robot_loc[0]][s1.robot_loc[1]] = 0
             s1.robot_loc = sol_path[t]
         print("T: " + str(t + 1))
+        print(sol_path)
         s1.print_out()
-        print(" ")
-    print(sol_path)
+    grid[sol_path[-1][0]][sol_path[-1][1]] = "W"
+    s1.print_out()
     return True
 
 
@@ -93,7 +96,6 @@ def save_the_ship_bot2_fringe(grid):
         if bot_loc in s1.fire_loc:
             grid[bot_loc[0]][bot_loc[1]] = "X"
             s1.print_out()
-            print("")
             print("Fire engulfed bot")
             return False
         if bot_loc == s1.button_loc:
@@ -130,11 +132,81 @@ def save_the_ship_bot2_fringe(grid):
         if s1.robot_loc == s1.button_loc:
             grid[s1.robot_loc[0]][s1.robot_loc[1]] = "W"
             s1.print_out()
-            print("")
             return True
         s1.spread_fire()
         s1.print_out()
-        print("")
+
+
+def save_the_ship_bot3_fringe(grid):
+    dim = s1.dim
+    signal = True
+    while signal:
+        bot_loc = s1.robot_loc
+        if bot_loc in s1.fire_loc:
+            grid[bot_loc[0]][bot_loc[1]] = "X"
+            s1.print_out()
+            print("Fire engulfed bot")
+            return False
+        if bot_loc == s1.button_loc:
+            return True
+        fringe = Fringe(bot_loc)
+        sol_path = []
+        t = 1
+        while not fringe.queue.is_empty():
+            curr_node = fringe.pop()
+            if curr_node.loc == s1.button_loc:
+                while curr_node.prev is not None:
+                    sol_path.append(curr_node.loc)
+                    curr_node = curr_node.prev
+                break
+            i = curr_node.loc[0]
+            j = curr_node.loc[1]
+            if (i + 1 < dim and grid[i + 1][j] != 1 and (i + 1, j) not in s1.fire_loc and (i + 1, j)
+                    not in s1.fire_neighbors):
+                after_check_steps(i + 1, j, curr_node, fringe)
+            if (i - 1 >= 0 and grid[i - 1][j] != 1 and (i - 1, j) not in s1.fire_loc and (i - 1, j)
+                    not in s1.fire_neighbors):
+                after_check_steps(i - 1, j, curr_node, fringe)
+            if (j + 1 < dim and grid[i][j + 1] != 1 and (i, j + 1) not in s1.fire_loc and (i, j + 1)
+                    not in s1.fire_neighbors):
+                after_check_steps(i, j + 1, curr_node, fringe)
+            if (j - 1 >= 0 and grid[i][j - 1] != 1 and (i, j - 1) not in s1.fire_loc and (i, j-1)
+                    not in s1.fire_neighbors):
+                after_check_steps(i, j - 1, curr_node, fringe)
+        if len(sol_path) == 0:
+            fringe1 = Fringe(bot_loc)
+            while not fringe1.queue.is_empty():
+                curr_node = fringe1.pop()
+                if curr_node.loc == s1.button_loc:
+                    while curr_node.prev is not None:
+                        sol_path.append(curr_node.loc)
+                        curr_node = curr_node.prev
+                    break
+                i = curr_node.loc[0]
+                j = curr_node.loc[1]
+                if i + 1 < dim and grid[i + 1][j] != 1 and (i + 1, j) not in s1.fire_loc:
+                    after_check_steps(i + 1, j, curr_node, fringe1)
+                if i - 1 >= 0 and grid[i - 1][j] != 1 and (i - 1, j) not in s1.fire_loc:
+                    after_check_steps(i - 1, j, curr_node, fringe1)
+                if j + 1 < dim and grid[i][j + 1] != 1 and (i, j + 1) not in s1.fire_loc:
+                    after_check_steps(i, j + 1, curr_node, fringe1)
+                if j - 1 >= 0 and grid[i][j - 1] != 1 and (i, j - 1) not in s1.fire_loc:
+                    after_check_steps(i, j - 1, curr_node, fringe1)
+            if len(sol_path) == 0:
+                print("No safe path to the button")
+                return False
+        print("T: " + str(t))
+        t += 1
+        print(sol_path)
+        grid[s1.robot_loc[0]][s1.robot_loc[1]] = 0
+        s1.robot_loc = sol_path[-1]
+        grid[s1.robot_loc[0]][s1.robot_loc[1]] = BOT_3
+        if s1.robot_loc == s1.button_loc:
+            grid[s1.robot_loc[0]][s1.robot_loc[1]] = "W"
+            s1.print_out()
+            return True
+        s1.spread_fire()
+        s1.print_out()
 
 
 def start_world(grid, bot, bot_loc):
@@ -150,7 +222,7 @@ def start_world(grid, bot, bot_loc):
     elif bot == BOT_2:
         return save_the_ship_bot2_fringe(grid)
     elif bot == BOT_3:
-        return False
+        return save_the_ship_bot3_fringe(grid)
     else:
         return False
 
@@ -173,7 +245,6 @@ if __name__ == '__main__':
     s1.init_environment(bot)
     print("T: 0")
     s1.print_out()
-    print(" ")
     layout, robot_location = s1.layout, s1.robot_loc
     fire_suppressed = start_world(layout, bot, robot_location)
     print("Fire Suppressed: " + str(fire_suppressed))

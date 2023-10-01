@@ -61,8 +61,10 @@ class Ship:
                 if j - 1 >= 0 and self.layout[i][j - 1] == 2:
                     K += 1
                 probability = 1 - pow((1 - self.q), K)
+                probability = round(probability * 100)
+                probability = probability / 100
                 r = random.random()
-                if r <= probability:
+                if r < probability:
                     self.layout[i][j] = 2
                     self.fire_loc.append((i, j))
                     to_remove.append((i,j))
@@ -114,6 +116,7 @@ class Ship:
         """
         for row in self.layout:
             print(row)
+        print("")
 
 
 def purge_half(dead_ends, layout, dim, n_purge):
