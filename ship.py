@@ -12,6 +12,7 @@ SAFETY_BUTTON = 3
 
 class Ship:
     def __init__(self, dim, q, bot):
+        self.bot = bot
         self.dim = dim
         self.q = q
         self.layout = []
@@ -81,13 +82,28 @@ class Ship:
                 self.button_loc = (ri,rj)
         # place fire
         to_place = [FIRE]
+
         self.fire_loc = {0}
         while len(to_place) > 0:
             ri = random.randint(0, dim - 1)
             rj = random.randint(0, dim - 1)
             if self.layout[ri][rj] == OPEN:
                 self.layout[ri][rj] = to_place.pop(0)
-                self.fire_loc.add((ri, rj))
+                self.fire_start = (ri, rj)
+                self.fire_loc.add(self.fire_start)
+                self.fire_adj = self.get_fire_loc_adj(ri,rj)
+
+    def get_fire_loc_adj(self,i,j):
+        adjs = {}
+        if i + 1 < self.dim and self.layout[i+1][j] != WALL:
+            adjs[(i + 1, j)] = 1
+        if i - 1 >= 0 and self.layout[i-1][j] != WALL:
+            adjs[(i - 1, j)] = 1
+        if j + 1 < self.dim and self.layout[i][j+1] != WALL:
+            adjs[(i, j + 1)] = 1
+        if j - 1 >= 0 and self.layout[i][j-1] != WALL:
+            adjs[(i, j - 1)] = 1
+        return adjs
 
     def get_adj_value(self, i, j, value):
         adjs = []
@@ -117,3 +133,41 @@ class Ship:
         for row in self.layout:
             print(row)
         return ""
+
+    def spread_fire(self):
+        to_remove = []
+        for cell in self.fire_adj:
+            prob = 1 - pow(1-self.q,self.fire_adj[cell])
+            random_float = random.uniform(0, 0.99)
+            if random_float < prob:
+                i = cell[0]
+                j = cell[1]
+                self.layout[i][j] = FIRE
+                to_remove.append(cell)
+        for cell in to_remove:
+            del self.fire_adj[cell]
+            self.update_fire_adj(cell[0],cell[1])
+
+    def update_fire_adj(self,i,j):
+        if i + 1 < self.dim:
+            if (i+1,j) in self.fire_adj:
+                self.fire_adj[(i+1,j)] += 1
+            elif self.layout[i+1][j] != WALL and self.layout[i+1][j] != FIRE:
+                self.fire_adj[(i+1,j)] = 1
+        if i - 1 >= 0:
+            if (i-1,j) in self.fire_adj:
+                self.fire_adj[(i-1,j)] += 1
+            elif self.layout[i-1][j] != WALL and self.layout[i-1][j] != FIRE:
+                self.fire_adj[(i-1,j)] = 1
+        if j + 1 < self.dim:
+            if (i,j+1) in self.fire_adj:
+                self.fire_adj[(i,j+1)] += 1
+            elif self.layout[i][j+1] != WALL and self.layout[i][j+1] != FIRE:
+                self.fire_adj[(i,j+1)] = 1
+        if j - 1 >= 0:
+            if (i,j-1) in self.fire_adj:
+                self.fire_adj[(i,j-1)] += 1
+            elif self.layout[i][j-1] != WALL and self.layout[i][j-1] != FIRE:
+                self.fire_adj[(i,j-1)] = 1
+
+
