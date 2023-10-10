@@ -1,4 +1,5 @@
 import random
+import copy
 
 WALL = 1
 OPEN = 0
@@ -82,8 +83,8 @@ class Ship:
                 self.button_loc = (ri,rj)
         # place fire
         to_place = [FIRE]
-
         self.fire_loc = {0}
+        self.fire_loc.remove(0)
         while len(to_place) > 0:
             ri = random.randint(0, dim - 1)
             rj = random.randint(0, dim - 1)
@@ -143,6 +144,7 @@ class Ship:
                 i = cell[0]
                 j = cell[1]
                 self.layout[i][j] = FIRE
+                self.fire_loc.add(cell)
                 to_remove.append(cell)
         for cell in to_remove:
             del self.fire_adj[cell]
