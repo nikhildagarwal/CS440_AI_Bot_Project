@@ -8,6 +8,28 @@ class Node:
         self.next = []
 
 
+class ANode:
+    def __init__(self, tup, cost, heuristic, prev):
+        self.loc = tup
+        self.g = cost
+        self.h = heuristic
+        self.f = cost + heuristic
+        self.prev = prev
+
+    def __lt__(self, other):
+        if isinstance(other,ANode):
+            return self.f < other.f
+        return TypeError
+
+    def __eq__(self, other):
+        if isinstance(other, ANode):
+            return self.loc == other.loc
+        return TypeError
+
+    def __hash__(self):
+        return hash(self.loc)
+
+
 class Fringe:
     def __init__(self, start_node):
         self.queue = deque([start_node])
