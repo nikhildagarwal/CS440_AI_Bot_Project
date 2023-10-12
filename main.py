@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from ship import WALL, OPEN, BOT_1, BOT_3, BOT_2, BOT_4, SAFETY_BUTTON, FIRE, Ship
 from data_structure import Node, Fringe, ANode
 import heapq
-import time
+import copy
 
 
 def calculate_heuristic(i1,i2,j1,j2):
@@ -49,6 +49,47 @@ def bot_1_path_Astar(s):
                     heapq.heappush(searchable,new_node)
                     key[neighbor] = new_node
     return []
+
+
+def bot_4_path_Astar(s):
+    prob_grid = generate_probability_grid(s, 25, 10)
+    if prob_grid[s.button_loc[0]][s.button_loc[1]] > 0.0:
+        return bot_1_path_Astar(s)
+    searchable = []
+    visited = {0}
+    start = ANode(s.bot_loc, 0, calculate_heuristic(s.bot_loc[0], s.button_loc[0], s.bot_loc[1], s.button_loc[1]), None)
+    key = {s.bot_loc: start}
+    heapq.heappush(searchable, start)
+    while searchable:
+        current_node = heapq.heappop(searchable)
+        key.pop(current_node.loc)
+        if current_node.loc == s.button_loc:
+            r_path = []
+            while current_node.prev is not None:
+                r_path.append(current_node.loc)
+                current_node = current_node.prev
+            return r_path
+        visited.add(current_node.loc)
+        i = current_node.loc[0]
+        j = current_node.loc[1]
+        neighbors = [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
+        for neighbor in neighbors:
+            if (on_board(neighbor, s.dim) and neighbor not in visited and s.layout[neighbor[0]][neighbor[1]] != WALL
+                    and prob_grid[neighbor[0]][neighbor[1]] < prob_grid[s.button_loc[0]][s.button_loc[1]]):
+                new_g = current_node.g + prob_grid[neighbor[0]][neighbor[1]] + 1
+                new_h = calculate_heuristic(neighbor[0], s.button_loc[0], neighbor[1], s.button_loc[1])
+                new_node = ANode(neighbor, new_g, new_h, current_node)
+                get_node = key.get(neighbor, None)
+                if get_node is not None:
+                    if new_node.f < get_node.f:
+                        get_node.f = new_node.f
+                        get_node.g = new_node.g
+                        get_node.prev = current_node
+                        heapq.heapify(searchable)
+                else:
+                    heapq.heappush(searchable, new_node)
+                    key[neighbor] = new_node
+    return bot_3_path_Astar(s)
 
 
 def bot_2_path_Astar(s):
@@ -211,13 +252,29 @@ def bot_3_path(s):
     return bot_path
 
 
+def generate_probability_grid(s, iterations, sim):
+    grid = [[0 for _ in range(s.dim)] for _ in range(s.dim)]
+    total = sim
+    for _ in range(sim):
+        clone = copy.deepcopy(s)
+        for _ in range(iterations):
+            clone.spread_fire()
+        for loc in clone.fire_loc:
+            grid[loc[0]][loc[1]] += 1
+    for i in range(s.dim):
+        for j in range(s.dim):
+            grid[i][j] /= total
+    return grid
+
+
 def runner():
     mod = 2
-    bot_list = [BOT_1, BOT_2, BOT_3]
+    bot_list = [BOT_4]
     q_values = []
     prob_values_bot_1 = []
     prob_values_bot_2 = []
     prob_values_bot_3 = []
+    prob_values_bot_4 = []
     for i in range(101):
         if i % mod == 0:
             q_values.append(i / 100)
@@ -227,7 +284,7 @@ def runner():
                 total = 0
                 count = 0
                 for i in range(400):
-                    ship = Ship(30, j / 100, bot)
+                    ship = Ship(50, j / 100, bot)
                     if ship.bot == BOT_1:
                         path = bot_1_path_Astar(ship)
                         success = True
@@ -259,33 +316,47 @@ def runner():
                         success = True
                         while ship.bot_loc != ship.button_loc:
                             path = bot_3_path_Astar(ship)
-                            ship.spread_fire()
                             if len(path) == 0:
                                 success = False
                                 break
+                            ship.spread_fire()
                             if path[-1] in ship.fire_loc:
                                 success = False
                                 break
-                            ship.bot_loc = path.pop(-1)
+                            ship.bot_loc = path[-1]
                         if success:
                             count += 1
                         total += 1
                     else:
-                        pass
+                        path = bot_4_path_Astar(ship)
+                        success = True
+                        while path:
+                            ship.spread_fire()
+                            if ship.fire_loc.intersection(path):
+                                success = False
+                                break
+                            path.pop(-1)
+                        if success:
+                            count += 1
+                        total += 1
                 if bot == BOT_1:
                     prob_values_bot_1.append(count / total)
                 elif bot == BOT_2:
                     prob_values_bot_2.append(count / total)
                 elif bot == BOT_3:
                     prob_values_bot_3.append(count/total)
+                elif bot == BOT_4:
+                    prob_values_bot_4.append(count/total)
                 print(bot,":",j/100,":",count/total)
-    with open('test_data.txt', 'w') as file:
+    with open('test.txt', 'w') as file:
         file.write(str(prob_values_bot_1)+"\n")
         file.write(str(prob_values_bot_2) + "\n")
         file.write(str(prob_values_bot_3) + "\n")
-    plt.plot(q_values, prob_values_bot_1, label='Bot 1', marker='.', linestyle='-', color='b')
-    plt.plot(q_values, prob_values_bot_2, label='Bot 2', marker='.', linestyle='-', color='r')
-    plt.plot(q_values, prob_values_bot_3, label="Bot 3", marker='.', linestyle='-', color='g')
+        file.write(str(prob_values_bot_4) + "\n")
+    #plt.plot(q_values, prob_values_bot_1, label='Bot 1', marker='.', linestyle='-', color='b')
+    #plt.plot(q_values, prob_values_bot_2, label='Bot 2', marker='.', linestyle='-', color='r')
+    #plt.plot(q_values, prob_values_bot_3, label="Bot 3", marker='.', linestyle='-', color='g')
+    plt.plot(q_values, prob_values_bot_4, label="Bot 4", marker='.', linestyle='-', color='m')
     plt.xlabel('q values (flamability constant)')
     plt.ylabel('average probability of success (400 trials per q value)')
     plt.legend()
