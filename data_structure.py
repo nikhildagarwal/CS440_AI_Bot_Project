@@ -1,15 +1,17 @@
-from collections import deque
-
-
-class Node:
-    def __init__(self, tup):
-        self.loc = tup
-        self.prev = None
-        self.next = []
-
-
 class ANode:
+    """
+    Node object to hold location of each cell, hold the current cost that it took to reach the cell,
+        the new heuristic value from this current cell and the cost plus heuristic value.
+    Also points to the previous node in the chain so that we can extract paths from the node
+    """
     def __init__(self, tup, cost, heuristic, prev):
+        """
+        Init method for node
+        :param tup: location of cell as a tuple Ex: (i,j)
+        :param cost: cost to reach this cell
+        :param heuristic: heuristic value
+        :param prev: pointer to previous Node
+        """
         self.loc = tup
         self.g = cost
         self.h = heuristic
@@ -17,33 +19,28 @@ class ANode:
         self.prev = prev
 
     def __lt__(self, other):
+        """
+        Override of 'less than' function
+        :param other: other object
+        :return: compare the (cost + heuristic) values of each Anode object
+        """
         if isinstance(other,ANode):
             return self.f < other.f
         return TypeError
 
     def __eq__(self, other):
+        """
+        Override of equals method
+        :param other: other Anode object
+        :return: true if location tuples match, false otherwise
+        """
         if isinstance(other, ANode):
             return self.loc == other.loc
         return TypeError
 
     def __hash__(self):
+        """
+        Override of Anode object
+        :return: hash by tuple element
+        """
         return hash(self.loc)
-
-
-class Fringe:
-    def __init__(self, start_node):
-        self.queue = deque([start_node])
-        self.visited = {0}
-        self.visited.remove(0)
-        self.root = Node(start_node)
-
-    def __len__(self):
-        return len(self.queue)
-
-    def pop(self):
-        return self.queue.popleft()
-
-    def add(self, curr_node, new_node):
-        curr_node.next.append(new_node)
-        new_node.prev = curr_node
-        self.queue.append(new_node)

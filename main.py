@@ -1,43 +1,246 @@
 import matplotlib.pyplot as plt
 from ship import WALL, OPEN, BOT_1, BOT_3, BOT_2, BOT_4, SAFETY_BUTTON, FIRE, Ship
-from data_structure import Node, Fringe, ANode
+from data_structure import ANode
 import heapq
 import copy
 
 
 def calculate_heuristic(i1, i2, j1, j2):
+    """
+    Calculates heuristic using manhattan distance between goal cell and current cell
+    :param i1: current column
+    :param i2: goal column
+    :param j1: current row
+    :param j2: goal row
+    :return: float manhattan distance
+    """
     return pow(pow(j2 - j1, 2) + pow(i2 - i1, 2), 0.5)
 
 
 def on_board(tup, dim):
+    """
+    Checks if a given row and column index is within the bounds of the ship
+    :param tup: cell location as a tuple (i,j)
+    :param dim: dimensions of the ship Ex: n x n where n is the dimension
+    :return: True if cell is on the board, false otherwise
+    """
     return 0 <= tup[0] < dim and 0 <= tup[1] < dim
 
 
-def bot_1_path_Astar(s):
+def fire_to_button_length(s):
+    """
+    Calculates the length of the shortest path from the initial start of the fire, to the safety button
+    :param s: ship object
+    :return: length of the short past as an integer
+    """
     searchable = []
     visited = {0}
-    start = ANode(s.bot_loc, 1, calculate_heuristic(s.bot_loc[0], s.button_loc[0], s.bot_loc[1], s.button_loc[1]), None)
-    key = {s.bot_loc: start}
+    # Create starting node
+    start = ANode(s.fire_start, 1, calculate_heuristic(s.fire_start[0], s.button_loc[0], s.fire_start[1], s.button_loc[1]), None)
+    # Add node to dictionary of valid nodes
+    key = {s.fire_start: start}
+    # push node into heap (priority queue)
     heapq.heappush(searchable, start)
+    # while there are still nodes to be searched, pop the current lowest cost node and search it
     while searchable:
         current_node = heapq.heappop(searchable)
         key.pop(current_node.loc)
+        # if reached goal, back track from current node and return length of valid path
+        if current_node.loc == s.button_loc:
+            counter = 0
+            while current_node.prev is not None:
+                counter += 1
+                current_node = current_node.prev
+            return counter
+        # if not goal, add nodes location tuple to searched set (visited)
+        visited.add(current_node.loc)
+        i = current_node.loc[0]
+        j = current_node.loc[1]
+        neighbors = [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
+        # for each neighbor of the current cell, check if it has not been visited and not a wall
+        for neighbor in neighbors:
+            # if matches rules, calculate new cost and new heuristic.
+            if on_board(neighbor, s.dim) and neighbor not in visited and s.layout[neighbor[0]][neighbor[1]] != WALL:
+                new_g = current_node.g + 1
+                new_h = calculate_heuristic(neighbor[0], s.button_loc[0], neighbor[1], s.button_loc[1])
+                new_node = ANode(neighbor, new_g, new_h, current_node)
+                get_node = key.get(neighbor, None)
+                # if the node is found in the dictionary of nodes, update that nodes total cost, and re-heap our heap
+                if get_node is not None:
+                    if new_node.f < get_node.f:
+                        get_node.f = new_node.f
+                        get_node.g = new_node.g
+                        get_node.prev = current_node
+                        heapq.heapify(searchable)
+                # if not found, add new node to heap
+                else:
+                    heapq.heappush(searchable, new_node)
+                    key[neighbor] = new_node
+    # returns -1 if no path found
+    return -1
+
+
+def bot_1_path_Astar(s):
+    """
+    Calculates the path from the current cell to the safety button using the rules for bot 1.
+    Finds shortest path from the initial bot location to the safety button, while only avoiding the initial location of
+        the fire.
+    Utilizes A* algorithm for speed.
+    :param s: Ship object
+    :return: list of tuples (list of cells to visit in order to reach the button)
+    """
+    searchable = []
+    visited = {0}
+    # Create starting node
+    start = ANode(s.bot_loc, 1, calculate_heuristic(s.bot_loc[0], s.button_loc[0], s.bot_loc[1], s.button_loc[1]), None)
+    # Add node to dictionary of valid nodes
+    key = {s.bot_loc: start}
+    # push node into heap (priority queue)
+    heapq.heappush(searchable, start)
+    # while there are still nodes to be searched, pop the current lowest cost node and search it
+    while searchable:
+        current_node = heapq.heappop(searchable)
+        key.pop(current_node.loc)
+        # if reached goal, back track from current node and return path
         if current_node.loc == s.button_loc:
             r_path = []
             while current_node.prev is not None:
                 r_path.append(current_node.loc)
                 current_node = current_node.prev
             return r_path
+        # if not goal, add nodes location tuple to searched set (visited)
         visited.add(current_node.loc)
         i = current_node.loc[0]
         j = current_node.loc[1]
         neighbors = [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
+        # for each neighbor of the current cell, check if it has not been visited,
+        #       not a wall and not the init start of fire
         for neighbor in neighbors:
+            # if matches rules for bot 1, calculate new cost and new heuristic.
             if (on_board(neighbor, s.dim) and neighbor not in visited and s.layout[neighbor[0]][neighbor[1]] != WALL
                     and neighbor != s.fire_start):
                 new_g = current_node.g + 1
                 new_h = calculate_heuristic(neighbor[0], s.button_loc[0], neighbor[1], s.button_loc[1])
                 new_node = ANode(neighbor, new_g, new_h, current_node)
+                get_node = key.get(neighbor, None)
+                # if the node is found in the dictionary of nodes, update that nodes total cost, and re-heap our heap
+                if get_node is not None:
+                    if new_node.f < get_node.f:
+                        get_node.f = new_node.f
+                        get_node.g = new_node.g
+                        get_node.prev = current_node
+                        heapq.heapify(searchable)
+                # if not found, add new node to heap
+                else:
+                    heapq.heappush(searchable, new_node)
+                    key[neighbor] = new_node
+    # returns empty path if no path is found
+    return []
+
+
+def bot_2_path_Astar(s):
+    """
+    Calculates the path from the current cell to the safety button using the rules for bot 2.
+    Finds shortest path from the initial bot location to the safety button, while avoiding every cell that currently
+        has a fire.
+    Utilizes A* algorithm for speed.
+    :param s: Ship object
+    :return: list of tuples (list of cells to visit in order to reach the button)
+    """
+    searchable = []
+    visited = {0}
+    # create start Anode object
+    start = ANode(s.bot_loc, 1, calculate_heuristic(s.bot_loc[0], s.button_loc[0], s.bot_loc[1], s.button_loc[1]), None)
+    # add starting node to dictionary of nodes
+    key = {s.bot_loc: start}
+    # push starting node into heap
+    heapq.heappush(searchable, start)
+    # while there are still nodes to search in the heap, search them
+    while searchable:
+        current_node = heapq.heappop(searchable)
+        key.pop(current_node.loc)
+        # if we are the goal location (safety button), back track from the current node and return the path
+        if current_node.loc == s.button_loc:
+            r_path = []
+            while current_node.prev is not None:
+                r_path.append(current_node.loc)
+                current_node = current_node.prev
+            return r_path
+        # else, add node to visited, so that we do not search it again
+        visited.add(current_node.loc)
+        i = current_node.loc[0]
+        j = current_node.loc[1]
+        neighbors = [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
+        # for each neighbor of the current cell, check to see if it is not a WALL and not currently on fire
+        for neighbor in neighbors:
+            if (on_board(neighbor, s.dim) and neighbor not in visited and s.layout[neighbor[0]][neighbor[1]] != WALL
+                    and s.layout[neighbor[0]][neighbor[1]] != FIRE):
+                # if rules check out, calculate cost value for the new node
+                #       calculate heuristic value as well as total cost value
+                new_g = current_node.g + 1
+                new_h = calculate_heuristic(neighbor[0], s.button_loc[0], neighbor[1], s.button_loc[1])
+                # create node
+                new_node = ANode(neighbor, new_g, new_h, current_node)
+                # check to see if there is currently this node in the dictionary (and therefore in the heap)
+                get_node = key.get(neighbor, None)
+                # if node was found, update that nodes cost values and re-heap the heap
+                if get_node is not None:
+                    if new_node.f < get_node.f:
+                        get_node.f = new_node.f
+                        get_node.g = new_node.g
+                        get_node.prev = current_node
+                        heapq.heapify(searchable)
+                else:
+                    # else, push new node to the heap, and add node to dictionary of nodes
+                    heapq.heappush(searchable, new_node)
+                    key[neighbor] = new_node
+    # return empty path if no node is found
+    return []
+
+
+def bot_3_path_Astar(s):
+    """
+    Calculates the path from the current cell to the safety button using the rules for bot 3.
+    Finds shortest path from the initial bot location to the safety button, while avoiding every cell that currently
+        has a fire, and every cell currently adjacent to the fire.
+    If there is no path possible avoiding cell adjacent to fire, the bot reverts to rules of bot 2.
+    Utilizes A* algorithm for speed.
+    :param s: Ship object
+    :return: list of tuples (list of cells to visit in order to reach the button)
+    """
+    searchable = []
+    visited = {0}
+    # create starting node
+    start = ANode(s.bot_loc, 1, calculate_heuristic(s.bot_loc[0], s.button_loc[0], s.bot_loc[1], s.button_loc[1]), None)
+    key = {s.bot_loc: start}
+    heapq.heappush(searchable, start)
+    # while there are sill nodes to search in heap, search them
+    while searchable:
+        current_node = heapq.heappop(searchable)
+        key.pop(current_node.loc)
+        # if we are at the goal cell, back track rom the current node and return the path
+        if current_node.loc == s.button_loc:
+            r_path = []
+            while current_node.prev is not None:
+                r_path.append(current_node.loc)
+                current_node = current_node.prev
+            return r_path
+        # else, add cell to visited set so that we don't search that
+        visited.add(current_node.loc)
+        i = current_node.loc[0]
+        j = current_node.loc[1]
+        neighbors = [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
+        # for each neighbor, check if it is not a wall, not in the fire and also not adjacent to the fire
+        for neighbor in neighbors:
+            if (on_board(neighbor, s.dim) and neighbor not in visited and s.layout[neighbor[0]][neighbor[1]] != WALL
+                    and s.layout[neighbor[0]][neighbor[1]] != FIRE and neighbor not in s.fire_adj):
+                # if the above criteria check out, calculate new costs and heuristics
+                new_g = current_node.g + 1
+                new_h = calculate_heuristic(neighbor[0], s.button_loc[0], neighbor[1], s.button_loc[1])
+                # create new node
+                new_node = ANode(neighbor, new_g, new_h, current_node)
+                # if dictionary contains the node above update the cost of that node and re-heap the heap
+                # (two nodes are considered equal if their location attributes are ths same)
                 get_node = key.get(neighbor, None)
                 if get_node is not None:
                     if new_node.f < get_node.f:
@@ -46,14 +249,17 @@ def bot_1_path_Astar(s):
                         get_node.prev = current_node
                         heapq.heapify(searchable)
                 else:
+                    # else, add the new node to dictionary for look up and to the heap
                     heapq.heappush(searchable, new_node)
                     key[neighbor] = new_node
-    return []
+    # if there is no path based on the criteria of avoiding fire cells and fire adjacent cells,
+    #       return a path based on the rules of bot 2.
+    return bot_2_path_Astar(s)
 
 
-def bot_4_path_Astar(s):
-    prob_grid = generate_probability_grid(s, 25, 10)
-    if prob_grid[s.button_loc[0]][s.button_loc[1]] >= 0.7:
+# needs commenting
+def bot_4_path_Astar(s, prob_grid, iter_c):
+    if iter_c >= len(prob_grid):
         return bot_1_path_Astar(s)
     searchable = []
     visited = {0}
@@ -75,47 +281,11 @@ def bot_4_path_Astar(s):
         neighbors = [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
         for neighbor in neighbors:
             if (on_board(neighbor, s.dim) and neighbor not in visited and s.layout[neighbor[0]][neighbor[1]] != WALL
-                    and prob_grid[neighbor[0]][neighbor[1]] < (prob_grid[s.button_loc[0]][s.button_loc[1]]+((1-prob_grid[s.button_loc[0]][s.button_loc[1]])/3))):
-                new_g = current_node.g + prob_grid[neighbor[0]][neighbor[1]] * (
-                            1 - prob_grid[neighbor[0]][neighbor[1]]) + 1
-                new_h = calculate_heuristic(neighbor[0], s.button_loc[0], neighbor[1], s.button_loc[1])
-                new_node = ANode(neighbor, new_g, new_h, current_node)
-                get_node = key.get(neighbor, None)
-                if get_node is not None:
-                    if new_node.f < get_node.f:
-                        get_node.f = new_node.f
-                        get_node.g = new_node.g
-                        get_node.prev = current_node
-                        heapq.heapify(searchable)
-                else:
-                    heapq.heappush(searchable, new_node)
-                    key[neighbor] = new_node
-    return bot_3_path_Astar(s)
-
-
-def bot_2_path_Astar(s):
-    searchable = []
-    visited = {0}
-    start = ANode(s.bot_loc, 1, calculate_heuristic(s.bot_loc[0], s.button_loc[0], s.bot_loc[1], s.button_loc[1]), None)
-    key = {s.bot_loc: start}
-    heapq.heappush(searchable, start)
-    while searchable:
-        current_node = heapq.heappop(searchable)
-        key.pop(current_node.loc)
-        if current_node.loc == s.button_loc:
-            r_path = []
-            while current_node.prev is not None:
-                r_path.append(current_node.loc)
-                current_node = current_node.prev
-            return r_path
-        visited.add(current_node.loc)
-        i = current_node.loc[0]
-        j = current_node.loc[1]
-        neighbors = [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
-        for neighbor in neighbors:
-            if (on_board(neighbor, s.dim) and neighbor not in visited and s.layout[neighbor[0]][neighbor[1]] != WALL
-                    and s.layout[neighbor[0]][neighbor[1]] != FIRE):
-                new_g = current_node.g + 1
+                    and prob_grid[iter_c][neighbor[0]][neighbor[1]] <= (prob_grid[iter_c][s.button_loc[0]][s.button_loc[1]]+0.25)):
+                curr_p = prob_grid[iter_c][neighbor[0]][neighbor[1]]
+                if curr_p < 0.1:
+                    curr_p = 0
+                new_g = current_node.g + (0.4*(curr_p / (1 - curr_p))) + 5
                 new_h = calculate_heuristic(neighbor[0], s.button_loc[0], neighbor[1], s.button_loc[1])
                 new_node = ANode(neighbor, new_g, new_h, current_node)
                 get_node = key.get(neighbor, None)
@@ -131,129 +301,19 @@ def bot_2_path_Astar(s):
     return []
 
 
-def bot_3_path_Astar(s):
-    searchable = []
-    visited = {0}
-    start = ANode(s.bot_loc, 1, calculate_heuristic(s.bot_loc[0], s.button_loc[0], s.bot_loc[1], s.button_loc[1]), None)
-    key = {s.bot_loc: start}
-    heapq.heappush(searchable, start)
-    while searchable:
-        current_node = heapq.heappop(searchable)
-        key.pop(current_node.loc)
-        if current_node.loc == s.button_loc:
-            r_path = []
-            while current_node.prev is not None:
-                r_path.append(current_node.loc)
-                current_node = current_node.prev
-            return r_path
-        visited.add(current_node.loc)
-        i = current_node.loc[0]
-        j = current_node.loc[1]
-        neighbors = [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
-        for neighbor in neighbors:
-            if (on_board(neighbor, s.dim) and neighbor not in visited and s.layout[neighbor[0]][neighbor[1]] != WALL
-                    and s.layout[neighbor[0]][neighbor[1]] != FIRE and neighbor not in s.fire_adj):
-                new_g = current_node.g + 1
-                new_h = calculate_heuristic(neighbor[0], s.button_loc[0], neighbor[1], s.button_loc[1])
-                new_node = ANode(neighbor, new_g, new_h, current_node)
-                get_node = key.get(neighbor, None)
-                if get_node is not None:
-                    if new_node.f < get_node.f:
-                        get_node.f = new_node.f
-                        get_node.g = new_node.g
-                        get_node.prev = current_node
-                        heapq.heapify(searchable)
-                else:
-                    heapq.heappush(searchable, new_node)
-                    key[neighbor] = new_node
-    return bot_2_path_Astar(s)
-
-
-def bot_1_path(s):
-    fringe = Fringe(Node(s.bot_loc))
-    bot_path = []
-    while len(fringe) > 0:
-        curr_node = fringe.pop()
-        if curr_node.loc not in fringe.visited:
-            fringe.visited.add(curr_node.loc)
-            if curr_node.loc == s.button_loc:
-                while curr_node.prev is not None:
-                    bot_path.append(curr_node.loc)
-                    curr_node = curr_node.prev
-                return bot_path
-            else:
-                i = curr_node.loc[0]
-                j = curr_node.loc[1]
-                if i + 1 < s.dim and s.layout[i + 1][j] != WALL and (i + 1, j) != s.fire_start:
-                    fringe.add(curr_node, Node((i + 1, j)))
-                if i - 1 >= 0 and s.layout[i - 1][j] != WALL and (i - 1, j) != s.fire_start:
-                    fringe.add(curr_node, Node((i - 1, j)))
-                if j + 1 < s.dim and s.layout[i][j + 1] != WALL and (i, j + 1) != s.fire_start:
-                    fringe.add(curr_node, Node((i, j + 1)))
-                if j - 1 >= 0 and s.layout[i][j - 1] != WALL and (i, j - 1) != s.fire_start:
-                    fringe.add(curr_node, Node((i, j - 1)))
-    return bot_path
-
-
-def bot_2_path(s):
-    fringe = Fringe(Node(s.bot_loc))
-    bot_path = []
-    while len(fringe) > 0:
-        curr_node = fringe.pop()
-        if curr_node.loc not in fringe.visited:
-            fringe.visited.add(curr_node.loc)
-            if curr_node.loc == s.button_loc:
-                while curr_node.prev is not None:
-                    bot_path.append(curr_node.loc)
-                    curr_node = curr_node.prev
-                return bot_path
-            else:
-                i = curr_node.loc[0]
-                j = curr_node.loc[1]
-                if i + 1 < s.dim and s.layout[i + 1][j] != WALL and s.layout[i + 1][j] != FIRE:
-                    fringe.add(curr_node, Node((i + 1, j)))
-                if i - 1 >= 0 and s.layout[i - 1][j] != WALL and s.layout[i - 1][j] != FIRE:
-                    fringe.add(curr_node, Node((i - 1, j)))
-                if j + 1 < s.dim and s.layout[i][j + 1] != WALL and s.layout[i][j + 1] != FIRE:
-                    fringe.add(curr_node, Node((i, j + 1)))
-                if j - 1 >= 0 and s.layout[i][j - 1] != WALL and s.layout[i][j - 1] != FIRE:
-                    fringe.add(curr_node, Node((i, j - 1)))
-    return bot_path
-
-
-def bot_3_path(s):
-    fringe = Fringe(Node(s.bot_loc))
-    bot_path = []
-    while len(fringe) > 0:
-        curr_node = fringe.pop()
-        if curr_node.loc not in fringe.visited:
-            fringe.visited.add(curr_node.loc)
-            if curr_node.loc == s.button_loc:
-                while curr_node.prev is not None:
-                    bot_path.append(curr_node.loc)
-                    curr_node = curr_node.prev
-                return bot_path
-            else:
-                i = curr_node.loc[0]
-                j = curr_node.loc[1]
-                if (i + 1 < s.dim and s.layout[i + 1][j] != WALL and s.layout[i + 1][j] != FIRE and
-                        (i + 1, j) not in s.fire_adj):
-                    fringe.add(curr_node, Node((i + 1, j)))
-                if (i - 1 >= 0 and s.layout[i - 1][j] != WALL and s.layout[i - 1][j] != FIRE and
-                        (i - 1, j) not in s.fire_adj):
-                    fringe.add(curr_node, Node((i - 1, j)))
-                if (j + 1 < s.dim and s.layout[i][j + 1] != WALL and s.layout[i][j + 1] != FIRE and
-                        (i, j + 1) not in s.fire_adj):
-                    fringe.add(curr_node, Node((i, j + 1)))
-                if (j - 1 >= 0 and s.layout[i][j - 1] != WALL and s.layout[i][j - 1] != FIRE and
-                        (i, j - 1) not in s.fire_adj):
-                    fringe.add(curr_node, Node((i, j - 1)))
-    if len(bot_path) == 0:
-        return bot_2_path(s)
-    return bot_path
-
-
 def generate_probability_grid(s, iterations, sim):
+    """
+    Generate a new grid of all zero's initially (prob_grid),
+    Clone the ship 'sim' times and spread fire on each clone 'iteration' times.
+    If a cell catches on fire, add 1 to the same location in 'prob_grid'.
+    At the end of all simulations, loop through each cell in 'prob_grid' and divide by sim.
+    This will give us a grid, where the value of each cell will be the rough probability it will be on fire,
+        after x iterations
+    :param s: Ship object
+    :param iterations: number of time to spread_fire in each cloned ship
+    :param sim: number of simulations to run (number of clones to create)
+    :return: probability of fire grid
+    """
     grid = [[0 for _ in range(s.dim)] for _ in range(s.dim)]
     total = sim
     for _ in range(sim):
@@ -268,9 +328,16 @@ def generate_probability_grid(s, iterations, sim):
     return grid
 
 
-def runner():
-    mod = 2
-    bot_list = [ BOT_4]
+# needs commenting
+def runner(text_file, mod, trials, dim, bot_list):
+    """ship = Ship(10,0.5,BOT_4)
+    print(ship)
+    print(fire_to_button_length(ship))
+    exit(0)"""
+    """ship = Ship(5,0.5,BOT_4)
+    path = bot_4_path_Astar(ship)
+    print(path)
+    exit(0)"""
     q_values = []
     prob_values_bot_1 = []
     prob_values_bot_2 = []
@@ -284,8 +351,8 @@ def runner():
             if j % mod == 0:
                 total = 0
                 count = 0
-                for i in range(400):
-                    ship = Ship(50, j / 100, bot)
+                for i in range(trials):
+                    ship = Ship(dim, j / 100, bot)
                     if ship.bot == BOT_1:
                         path = bot_1_path_Astar(ship)
                         success = True
@@ -329,9 +396,14 @@ def runner():
                             count += 1
                         total += 1
                     else:
+                        ftb = fire_to_button_length(ship)
+                        pgs = []
+                        for z in range(ftb+10):
+                            pgs.append(generate_probability_grid(ship,z+1,10))
                         success = True
+                        iter_c = 0
                         while ship.bot_loc != ship.button_loc:
-                            path = bot_4_path_Astar(ship)
+                            path = bot_4_path_Astar(ship, pgs, iter_c)
                             if len(path) == 0:
                                 success = False
                                 break
@@ -340,6 +412,7 @@ def runner():
                                 success = False
                                 break
                             ship.bot_loc = path[-1]
+                            iter_c += 1
                         if success:
                             count += 1
                         total += 1
@@ -352,21 +425,15 @@ def runner():
                 elif bot == BOT_4:
                     prob_values_bot_4.append(count / total)
                 print(bot, ":", j / 100, ":", count / total)
-    with open('test1.txt', 'w') as file:
-        file.write(str(prob_values_bot_1) + "\n")
-        file.write(str(prob_values_bot_2) + "\n")
-        file.write(str(prob_values_bot_3) + "\n")
-        file.write(str(prob_values_bot_4) + "\n")
-    #plt.plot(q_values, prob_values_bot_1, label='Bot 1', marker='.', linestyle='-', color='b')
-    #plt.plot(q_values, prob_values_bot_2, label='Bot 2', marker='.', linestyle='-', color='r')
-    #plt.plot(q_values, prob_values_bot_3, label="Bot 3", marker='.', linestyle='-', color='g')
-    plt.plot(q_values, prob_values_bot_4, label="Bot 4", marker='.', linestyle='-', color='m')
-    plt.xlabel('q values (flamability constant)')
-    plt.ylabel('average probability of success (400 trials per q value)')
-    plt.legend()
-    plt.grid()
-    plt.show()
+    with open(text_file, 'w') as file:
+        file.write("bot_1="+str(prob_values_bot_1) + "\n")
+        file.write("bot_2="+str(prob_values_bot_2) + "\n")
+        file.write("bot_3="+str(prob_values_bot_3) + "\n")
+        file.write("bot_4="+str(prob_values_bot_4) + "\n")
 
 
 if __name__ == "__main__":
-    runner()
+    """
+    RUNS PROGRAM TO GENERATE FREQUENCY OF SUCCESS VALUES
+    """
+    runner('test2.txt',2,400,5,[BOT_1,BOT_2,BOT_3])
