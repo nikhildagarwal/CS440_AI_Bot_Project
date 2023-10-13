@@ -5,20 +5,20 @@ import heapq
 import copy
 
 
-def calculate_heuristic(i1,i2,j1,j2):
-    return pow(pow(j2-j1,2)+pow(i2-i1,2),0.5)
+def calculate_heuristic(i1, i2, j1, j2):
+    return pow(pow(j2 - j1, 2) + pow(i2 - i1, 2), 0.5)
 
 
-def on_board(tup,dim):
+def on_board(tup, dim):
     return 0 <= tup[0] < dim and 0 <= tup[1] < dim
 
 
 def bot_1_path_Astar(s):
     searchable = []
     visited = {0}
-    start = ANode(s.bot_loc,1, calculate_heuristic(s.bot_loc[0],s.button_loc[0],s.bot_loc[1],s.button_loc[1]),None)
+    start = ANode(s.bot_loc, 1, calculate_heuristic(s.bot_loc[0], s.button_loc[0], s.bot_loc[1], s.button_loc[1]), None)
     key = {s.bot_loc: start}
-    heapq.heappush(searchable,start)
+    heapq.heappush(searchable, start)
     while searchable:
         current_node = heapq.heappop(searchable)
         key.pop(current_node.loc)
@@ -31,14 +31,14 @@ def bot_1_path_Astar(s):
         visited.add(current_node.loc)
         i = current_node.loc[0]
         j = current_node.loc[1]
-        neighbors = [(i+1,j),(i-1,j),(i,j+1),(i,j-1)]
+        neighbors = [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
         for neighbor in neighbors:
-            if (on_board(neighbor,s.dim) and neighbor not in visited and s.layout[neighbor[0]][neighbor[1]] != WALL
+            if (on_board(neighbor, s.dim) and neighbor not in visited and s.layout[neighbor[0]][neighbor[1]] != WALL
                     and neighbor != s.fire_start):
                 new_g = current_node.g + 1
-                new_h = calculate_heuristic(neighbor[0],s.button_loc[0],neighbor[1],s.button_loc[1])
-                new_node = ANode(neighbor,new_g,new_h,current_node)
-                get_node = key.get(neighbor,None)
+                new_h = calculate_heuristic(neighbor[0], s.button_loc[0], neighbor[1], s.button_loc[1])
+                new_node = ANode(neighbor, new_g, new_h, current_node)
+                get_node = key.get(neighbor, None)
                 if get_node is not None:
                     if new_node.f < get_node.f:
                         get_node.f = new_node.f
@@ -46,14 +46,14 @@ def bot_1_path_Astar(s):
                         get_node.prev = current_node
                         heapq.heapify(searchable)
                 else:
-                    heapq.heappush(searchable,new_node)
+                    heapq.heappush(searchable, new_node)
                     key[neighbor] = new_node
     return []
 
 
 def bot_4_path_Astar(s):
     prob_grid = generate_probability_grid(s, 25, 10)
-    if prob_grid[s.button_loc[0]][s.button_loc[1]] > 0.0:
+    if prob_grid[s.button_loc[0]][s.button_loc[1]] >= 0.7:
         return bot_1_path_Astar(s)
     searchable = []
     visited = {0}
@@ -75,8 +75,9 @@ def bot_4_path_Astar(s):
         neighbors = [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
         for neighbor in neighbors:
             if (on_board(neighbor, s.dim) and neighbor not in visited and s.layout[neighbor[0]][neighbor[1]] != WALL
-                    and prob_grid[neighbor[0]][neighbor[1]] < prob_grid[s.button_loc[0]][s.button_loc[1]]):
-                new_g = current_node.g + prob_grid[neighbor[0]][neighbor[1]] + 1
+                    and prob_grid[neighbor[0]][neighbor[1]] < (prob_grid[s.button_loc[0]][s.button_loc[1]]+((1-prob_grid[s.button_loc[0]][s.button_loc[1]])/3))):
+                new_g = current_node.g + prob_grid[neighbor[0]][neighbor[1]] * (
+                            1 - prob_grid[neighbor[0]][neighbor[1]]) + 1
                 new_h = calculate_heuristic(neighbor[0], s.button_loc[0], neighbor[1], s.button_loc[1])
                 new_node = ANode(neighbor, new_g, new_h, current_node)
                 get_node = key.get(neighbor, None)
@@ -236,16 +237,16 @@ def bot_3_path(s):
                 i = curr_node.loc[0]
                 j = curr_node.loc[1]
                 if (i + 1 < s.dim and s.layout[i + 1][j] != WALL and s.layout[i + 1][j] != FIRE and
-                        (i+1,j) not in s.fire_adj):
+                        (i + 1, j) not in s.fire_adj):
                     fringe.add(curr_node, Node((i + 1, j)))
                 if (i - 1 >= 0 and s.layout[i - 1][j] != WALL and s.layout[i - 1][j] != FIRE and
-                        (i-1,j) not in s.fire_adj):
+                        (i - 1, j) not in s.fire_adj):
                     fringe.add(curr_node, Node((i - 1, j)))
                 if (j + 1 < s.dim and s.layout[i][j + 1] != WALL and s.layout[i][j + 1] != FIRE and
-                        (i,j+1) not in s.fire_adj):
+                        (i, j + 1) not in s.fire_adj):
                     fringe.add(curr_node, Node((i, j + 1)))
                 if (j - 1 >= 0 and s.layout[i][j - 1] != WALL and s.layout[i][j - 1] != FIRE and
-                        (i,j-1) not in s.fire_adj):
+                        (i, j - 1) not in s.fire_adj):
                     fringe.add(curr_node, Node((i, j - 1)))
     if len(bot_path) == 0:
         return bot_2_path(s)
@@ -269,7 +270,7 @@ def generate_probability_grid(s, iterations, sim):
 
 def runner():
     mod = 2
-    bot_list = [BOT_4]
+    bot_list = [ BOT_4]
     q_values = []
     prob_values_bot_1 = []
     prob_values_bot_2 = []
@@ -328,14 +329,17 @@ def runner():
                             count += 1
                         total += 1
                     else:
-                        path = bot_4_path_Astar(ship)
                         success = True
-                        while path:
-                            ship.spread_fire()
-                            if ship.fire_loc.intersection(path):
+                        while ship.bot_loc != ship.button_loc:
+                            path = bot_4_path_Astar(ship)
+                            if len(path) == 0:
                                 success = False
                                 break
-                            path.pop(-1)
+                            ship.spread_fire()
+                            if path[-1] in ship.fire_loc:
+                                success = False
+                                break
+                            ship.bot_loc = path[-1]
                         if success:
                             count += 1
                         total += 1
@@ -344,12 +348,12 @@ def runner():
                 elif bot == BOT_2:
                     prob_values_bot_2.append(count / total)
                 elif bot == BOT_3:
-                    prob_values_bot_3.append(count/total)
+                    prob_values_bot_3.append(count / total)
                 elif bot == BOT_4:
-                    prob_values_bot_4.append(count/total)
-                print(bot,":",j/100,":",count/total)
-    with open('test.txt', 'w') as file:
-        file.write(str(prob_values_bot_1)+"\n")
+                    prob_values_bot_4.append(count / total)
+                print(bot, ":", j / 100, ":", count / total)
+    with open('test1.txt', 'w') as file:
+        file.write(str(prob_values_bot_1) + "\n")
         file.write(str(prob_values_bot_2) + "\n")
         file.write(str(prob_values_bot_3) + "\n")
         file.write(str(prob_values_bot_4) + "\n")
