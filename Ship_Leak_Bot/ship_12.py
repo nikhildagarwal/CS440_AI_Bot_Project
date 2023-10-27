@@ -15,33 +15,45 @@ BOT_6 = -6
 BOT_7 = -7
 BOT_8 = -8
 BOT_9 = -9
+IMPOSSIBLE = 0
+POSSIBLE = 1
+UNDETECTED = 7
 LEAK = 2
 
 
 class Ship:
-    def __init__(self, dim, bot, leak_count):
+    def __init__(self, dim, bot, k):
         """
         Create the ship
         :param dim: size of the ship
         :param bot: type of bot
         """
+        # initialize sets to keep track of impossible and possible cells
+        self.impossible_loc = {0}
+        self.impossible_loc.remove(0)
+        self.possible_loc = {0}
+        self.possible_loc.remove(0)
         # bot of the ship
         self.bot = bot
         # dim of the ship
         self.dim = dim
-        # 2d list (array) of the layout of the ship
-        self.layout = []
-        # generate layout with each cell initially a Wall
+        # generate 2d list (array) of the layout of the ship
+        self.layout = [[WALL for _ in range(dim)] for _ in range(dim)]
+        # generate 2d list (array) ship memory of bot
+        self.memory = []
         for i in range(dim):
             row = []
             for j in range(dim):
-                row.append(WALL)
-            self.layout.append(row)
+                row.append(IMPOSSIBLE)
+                self.impossible_loc.add((i,j))
+            self.memory.append(row)
         # randomly generate a row and column index to open first
         open_i = random.randint(0, dim - 1)
         open_j = random.randint(0, dim - 1)
         # open first cell
         self.layout[open_i][open_j] = OPEN
+        self.memory[open_i][open_j] = UNDETECTED
+        self.impossible_loc.remove((open_i, open_j))
         # A will keep track of all cells that are adjacent to open cells and that only have one neighbor
         A = self.get_adj_no_value(open_i, open_j)
         # F will keep track of all cells that are finalized and cannot be opened. a cell is added to this set
@@ -60,6 +72,8 @@ class Ship:
             toj = to_open[1]
             # open that cell
             self.layout[toi][toj] = OPEN
+            self.memory[toi][toj] = UNDETECTED
+            self.impossible_loc.remove(to_open)
             # get the neighbors of this NOW open cell
             neighbors = self.get_adj_no_value(toi, toj)
             O_count = 0
@@ -98,6 +112,8 @@ class Ship:
                 n_r_index = random.randint(0, len(neighbors) - 1)
                 w_tup = neighbors.pop(n_r_index)
                 self.layout[w_tup[0]][w_tup[1]] = OPEN
+                self.memory[w_tup[0]][w_tup[0]] = UNDETECTED
+                self.impossible_loc.remove(w_tup)
         # place bot
         to_place = [bot]
         while len(to_place) > 0:
@@ -106,16 +122,18 @@ class Ship:
             if self.layout[ri][rj] == OPEN:
                 self.layout[ri][rj] = to_place.pop(0)
                 self.bot_loc = (ri, rj)
-        # place fire
-        to_place = [LEAK] * leak_count
+        # place leak
+        to_place = [LEAK]
         self.leak_loc = {0}
         self.leak_loc.remove(0)
         while len(to_place) > 0:
             ri = random.randint(0, dim - 1)
             rj = random.randint(0, dim - 1)
-            if self.layout[ri][rj] == OPEN:
+            i = self.bot_loc[0]
+            j = self.bot_loc[1]
+            if ((ri > i + k or ri < i - k) and (rj > j + k or rj < j - k)) and self.layout[ri][rj] == OPEN:
                 self.layout[ri][rj] = to_place.pop(0)
-                # store the location of the fire as a set (used in bot_2)
+                # store the location of the leak as a set (used in bot_2)
                 self.leak_loc.add((ri, rj))
 
     def get_adj_value(self, i, j, value):
@@ -164,4 +182,19 @@ class Ship:
         for row in self.layout:
             # print each row in the 2d array layout of the ship
             print(row)
+        print("")
+        for row in self.memory:
+            # print each row in the 2d array layout of the ship
+            print(row)
         return ""
+
+    def on_ship(self, i, j):
+        """
+        Returns true if given i and j coordinates are on the ship
+        :param i: row index
+        :param j: column index
+        :return: True if on ship, False otherwise
+        """
+        return 0 <= i < self.dim and 0 <= j < self.dim
+
+
