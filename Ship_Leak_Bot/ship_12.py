@@ -24,7 +24,7 @@ LEAK = 2
 
 
 def get_distance(x1, y1, x2, y2):
-    return pow(pow(y2-y1,2) + pow(x2-x1,2),0.5)
+    return pow(pow(y2 - y1, 2) + pow(x2 - x1, 2), 0.5)
 
 
 class Ship:
@@ -59,7 +59,7 @@ class Ship:
             row = []
             for j in range(dim):
                 row.append(IMPOSSIBLE)
-                self.impossible_loc.add((i,j))
+                self.impossible_loc.add((i, j))
             self.memory.append(row)
         # randomly generate a row and column index to open first
         open_i = random.randint(0, dim - 1)
@@ -67,7 +67,7 @@ class Ship:
         # open first cell
         self.layout[open_i][open_j] = OPEN
         self.memory[open_i][open_j] = POSSIBLE
-        oij_tup = (open_i,open_j)
+        oij_tup = (open_i, open_j)
         self.impossible_loc.remove(oij_tup)
         self.possible_loc.add(oij_tup)
         # A will keep track of all cells that are adjacent to open cells and that only have one neighbor
@@ -211,7 +211,7 @@ class Ship:
         for row in self.memory:
             # print each row in the 2d array layout of the ship
             print(row)
-        print("Total time (t):",self.total_time)
+        print("Total time (t):", self.total_time)
         return ""
 
     def on_ship(self, i, j):
@@ -231,12 +231,38 @@ class Ship:
         :param j: bot_loc j
         :return: None
         """
-        if i-self.k <= self.leak_loc[0][0] <= i+self.k and j-self.k <= self.leak_loc[0][1] <= j+self.k:
+        if i - self.k <= self.leak_loc[0][0] <= i + self.k and j - self.k <= self.leak_loc[0][1] <= j + self.k:
             self.detected = True
-            self.clear_box(i,j,self.k,KNOWN)
+            self.clear_box(i, j, self.k, KNOWN)
         else:
-            self.clear_box(i,j,self.k,IMPOSSIBLE)
+            self.clear_box(i, j, self.k, IMPOSSIBLE)
         self.total_time += 1
+
+    def scan_for_possible(self, i, j):
+        """
+        Scans grid for number of cells found with 'possible' value
+        :param i: bot_loc i
+        :param j: bot_loc j
+        :return: None
+        """
+        count = 0
+        for r in range(i - self.k, i + self.k + 1):
+            for c in range(j - self.k, j + self.k + 1):
+                if self.on_ship(r, c) and (r, c) in self.possible_loc:
+                    count += 1
+        return count
+
+    def next_cell_bot2(self):
+        ans = []
+        for tup in self.possible_loc:
+            i,j = tup
+            num_poss = self.scan_for_possible(i, j)
+            if not ans or num_poss > ans[0][2]:
+                ans = [(i,j,num_poss)]
+            elif num_poss == ans[0][2]:
+                ans.append((i,j,num_poss))
+        ri = random.randint(0,len(ans)-1)
+        return ans[ri][0],ans[ri][1]
 
     def clear_box(self, i, j, k, val):
         """
@@ -247,11 +273,11 @@ class Ship:
         :param k: k value
         :return: None
         """
-        for r in range(i-k,i+k+1):
-            for c in range(j-k,j+k+1):
-                if self.on_ship(r,c) and self.memory[r][c] == POSSIBLE:
+        for r in range(i - k, i + k + 1):
+            for c in range(j - k, j + k + 1):
+                if self.on_ship(r, c) and self.memory[r][c] == POSSIBLE:
                     self.memory[r][c] = val
-                    rc_tup = (r,c)
+                    rc_tup = (r, c)
                     if val == IMPOSSIBLE:
                         self.impossible_loc.add(rc_tup)
                     else:
@@ -266,15 +292,15 @@ class Ship:
         i, j = self.bot_loc
         for tup in my_set:
             ni, nj = tup
-            heapq.heappush(heap,[get_distance(i,j,ni,nj),random.randint(0,200),ni,nj])
+            heapq.heappush(heap, [get_distance(i, j, ni, nj), random.randint(0, 200), ni, nj])
         arr = heapq.heappop(heap)
-        return arr[2],arr[3]
+        return arr[2], arr[3]
 
     def A_star(self, goal):
         searchable = []
         si, sj = self.bot_loc
-        start = [0, get_distance(si,sj,goal[0],goal[1]),self.bot_loc]
-        key = {self.bot_loc:start}
+        start = [0, get_distance(si, sj, goal[0], goal[1]), self.bot_loc]
+        key = {self.bot_loc: start}
         heapq.heappush(searchable, start)
         visited = {0}
         visited.remove(0)
@@ -290,14 +316,15 @@ class Ship:
                 return
             visited.add(curr_loc)
             i, j = curr_loc
-            nn = np.array([(i+1,j),(i-1,j),(i,j+1),(i,j-1)])
+            nn = np.array([(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)])
             np.random.shuffle(nn)
             for c in range(len(nn)):
                 neighbor = tuple(nn[c])
-                new = [curr_path_sum+1,get_distance(neighbor[0],neighbor[1],self.bot_loc[0],self.bot_loc[1]),neighbor]
-                existing = key.get(neighbor,None)
+                new = [curr_path_sum + 1, get_distance(neighbor[0], neighbor[1], self.bot_loc[0], self.bot_loc[1]),
+                       neighbor]
+                existing = key.get(neighbor, None)
                 if existing is None:
-                    heapq.heappush(searchable,new)
+                    heapq.heappush(searchable, new)
                     key[neighbor] = new
                 else:
                     if existing[0] > new[0]:
