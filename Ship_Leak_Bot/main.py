@@ -1,9 +1,11 @@
-from ship_12 import LEAK, WALL, OPEN, BOT_1, BOT_3, BOT_2, BOT_4, BOT_5, BOT_6, BOT_7, BOT_8, BOT_9, Ship
+import ship_12
+import ship_34
+from ship_12 import LEAK, WALL, OPEN, BOT_1, BOT_3, BOT_2, BOT_4, BOT_5, BOT_6, BOT_7, BOT_8, BOT_9
 from ship_12 import IMPOSSIBLE, POSSIBLE, KNOWN
 
 
 def test_bot1(dim: int, k: int) -> float:
-    s = Ship(dim, BOT_1, k)
+    s = ship_12.Ship(dim, BOT_1, k)
     while not s.detected:
         closest_cell = s.get_closest_val_in_set(s.possible_loc)
         s.A_star(closest_cell)
@@ -25,7 +27,7 @@ def test_bot1(dim: int, k: int) -> float:
 
 
 def test_bot2A(dim: int, k: int) -> float:
-    s = Ship(dim, BOT_2, k)
+    s = ship_12.Ship(dim, BOT_2, k)
     while not s.detected:
         closest_cell = s.next_cell_bot2A()
         s.A_star(closest_cell)
@@ -47,7 +49,7 @@ def test_bot2A(dim: int, k: int) -> float:
 
 
 def test_bot2B(dim: int, k: int) -> float:
-    s = Ship(dim, BOT_2, k)
+    s = ship_12.Ship(dim, BOT_2, k)
     while not s.detected:
         closest_cell = s.next_cell_bot2B()
         s.A_star(closest_cell)
@@ -72,6 +74,13 @@ def test_bot2C(dim: int, k: int) -> float:
     if k < 5:
         return test_bot2A(dim,k)
     return test_bot2B(dim,k)
+
+
+def test_bot3(dim: int, alpha: int) -> float:
+    s = ship_34.Ship(dim, BOT_3, alpha)
+    print(s)
+    print(s.impossible_loc)
+    return 0.0
 
 
 if __name__ == '__main__':
