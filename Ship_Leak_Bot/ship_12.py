@@ -252,17 +252,70 @@ class Ship:
                     count += 1
         return count
 
-    def next_cell_bot2(self):
-        ans = []
-        for tup in self.possible_loc:
-            i,j = tup
-            num_poss = self.scan_for_possible(i, j)
-            if not ans or num_poss > ans[0][2]:
-                ans = [(i,j,num_poss)]
-            elif num_poss == ans[0][2]:
-                ans.append((i,j,num_poss))
-        ri = random.randint(0,len(ans)-1)
-        return ans[ri][0],ans[ri][1]
+    def next_cell_bot2B(self):
+        closest = self.get_closest_vals_in_set(self.possible_loc)
+        mt = [[0, None, None]]
+        for dist, i, j in closest:
+            z = self.scan_for_possible(i, j)
+            if z > mt[0][0]:
+                mt = [[z, i, j]]
+            elif z == mt[0][0]:
+                mt.append([z, i, j])
+        ri = random.randint(0, len(mt) - 1)
+        return mt[ri][1], mt[ri][2]
+
+    def next_cell_bot2A(self):
+        i, j = self.bot_loc
+        dr = min(i + (2*self.k) + 1, self.dim -1)
+        ur = max(i - (2*self.k) - 1, 0)
+        rc = min(j + (2*self.k) + 1, self.dim - 1)
+        lc = max(j - (2*self.k) - 1, 0)
+        drb = i + self.k
+        urb = i - self.k
+        rcb = j + self.k
+        lcb = j - self.k
+        mt = [[0, None, None]]
+        if lc < lcb:
+            while (self.layout[i][lc] == WALL or self.memory[i][lc] == IMPOSSIBLE) and lc < lcb:
+                lc += 1
+            if lc < lcb:
+                z_count = self.scan_for_possible(i,lc)
+                if z_count > mt[0][0]:
+                    mt = [[z_count,i,lc]]
+                elif z_count == mt[0][0]:
+                    mt.append([z_count,i,lc])
+        if dr > drb:
+            while (self.layout[dr][j] == WALL or self.memory[dr][j] == IMPOSSIBLE) and dr > drb:
+                dr -= 1
+            if dr > drb:
+                z_count = self.scan_for_possible(dr,j)
+                if z_count > mt[0][0]:
+                    mt = [[z_count,dr,j]]
+                elif z_count == mt[0][0]:
+                    mt.append([z_count,dr,j])
+        if ur < urb:
+            while (self.layout[ur][j] == WALL or self.memory[ur][j] == IMPOSSIBLE) and ur < urb:
+                ur += 1
+            if ur < urb:
+                z_count = self.scan_for_possible(ur, j)
+                if z_count > mt[0][0]:
+                    mt = [[z_count, ur, j]]
+                elif z_count == mt[0][0]:
+                    mt.append([z_count, ur, j])
+        if rc > rcb:
+            while (self.layout[i][rc] == WALL or self.memory[i][rc] == IMPOSSIBLE) and rc > rcb:
+                rc -= 1
+            if rc > rcb:
+                z_count = self.scan_for_possible(i,rc)
+                if z_count > mt[0][0]:
+                    mt = [[z_count,i,rc]]
+                elif z_count == mt[0][0]:
+                    mt.append([z_count,i,rc])
+        if mt[0][0] != 0:
+            ri = random.randint(0,len(mt)-1)
+            return mt[ri][1], mt[ri][2]
+        else:
+            return self.get_closest_val_in_set(self.possible_loc)
 
     def clear_box(self, i, j, k, val):
         """
@@ -287,14 +340,30 @@ class Ship:
                     except KeyError:
                         pass
 
-    def get_closest_val_in_set(self, my_set):
-        heap = []
+    def get_closest_vals_in_set(self, my_set):
         i, j = self.bot_loc
+        closest = [[70, None, None]]
         for tup in my_set:
             ni, nj = tup
-            heapq.heappush(heap, [get_distance(i, j, ni, nj), random.randint(0, 200), ni, nj])
-        arr = heapq.heappop(heap)
-        return arr[2], arr[3]
+            dist = get_distance(ni, nj, i, j)
+            if dist < closest[0][0]:
+                closest = [[dist, ni, nj]]
+            elif dist == closest[0][0]:
+                closest.append([dist, ni, nj])
+        return closest
+
+    def get_closest_val_in_set(self, my_set):
+        i, j = self.bot_loc
+        closest = [[70,None,None]]
+        for tup in my_set:
+            ni, nj = tup
+            dist = get_distance(ni,nj, i, j)
+            if dist < closest[0][0]:
+                closest = [[dist,ni,nj]]
+            elif dist == closest[0][0]:
+                closest.append([dist,ni,nj])
+        ri = random.randint(0,len(closest)-1)
+        return closest[ri][1], closest[ri][2]
 
     def A_star(self, goal):
         searchable = []
