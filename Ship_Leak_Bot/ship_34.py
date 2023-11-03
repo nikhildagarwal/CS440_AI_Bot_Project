@@ -2,7 +2,7 @@ import random
 import numpy as np
 import heapq
 from ship_12 import WALL, OPEN, BOT_1, BOT_2, BOT_3, BOT_4, BOT_5, BOT_6, BOT_7, BOT_8, BOT_9
-
+import math
 
 """
 Final Constant vars
@@ -25,6 +25,7 @@ class Ship:
         :param bot: type of bot
         """
         self.detected = False
+        self.alpha = alpha
         self.found = False
         # initialize counter to keep track of time it takes for bot to reach leak
         self.total_time = 0
@@ -145,7 +146,7 @@ class Ship:
             # store the location of the leak as a set (used in bot_2)
             self.leak_loc.append((ri, rj))
         # print("Exit 3")
-        init_prob = 1/len(self.possible_loc)
+        init_prob = 1 / len(self.possible_loc)
         for pi, pj in self.possible_loc:
             self.memory[pi][pj] = init_prob
 
@@ -211,7 +212,7 @@ class Ship:
         """
         return 0 <= i < self.dim and 0 <= j < self.dim
 
-    def A_star(self, goal):
+    def A_star(self, goal, move_bot):
         searchable = []
         si, sj = self.bot_loc
         start = [0, get_distance(si, sj, goal[0], goal[1]), self.bot_loc]
@@ -224,6 +225,11 @@ class Ship:
             curr_path_sum, curr_dist, curr_loc = curr
             key.pop(curr_loc)
             if curr_loc == goal:
+                if move_bot:
+                    self.total_time += curr_path_sum
+                    self.layout[self.bot_loc[0]][self.bot_loc[1]] = OPEN
+                    self.bot_loc = curr_loc
+                    self.layout[self.bot_loc[0]][self.bot_loc[1]] = self.bot
                 return curr_path_sum
             visited.add(curr_loc)
             i, j = curr_loc
@@ -242,3 +248,75 @@ class Ship:
                         existing[0] = new[0]
                         heapq.heapify(searchable)
         return None
+
+    def get_closest_vals_in_set(self, my_set):
+        i, j = self.bot_loc
+        closest = [[70, None, None]]
+        for tup in my_set:
+            ni, nj = tup
+            dist = get_distance(ni, nj, i, j)
+            if dist < closest[0][0]:
+                closest = [[dist, ni, nj]]
+            elif dist == closest[0][0]:
+                closest.append([dist, ni, nj])
+        return closest
+
+    def next_cell_bot3(self, my_set):
+        largest = [[0, None, None]]
+        for ti, tj in my_set:
+            val = self.memory[ti][tj]
+            if val > largest[0][0]:
+                largest = [[val, ti, tj]]
+            elif val == largest[0][0]:
+                largest.append([val, ti, tj])
+        if len(largest) == 1:
+            return largest[0][1], largest[0][2]
+        i, j = self.bot_loc
+        closest = [[70, None, None]]
+        for p, ni, nj in largest:
+            dist = get_distance(i, j, ni, nj)
+            if dist < closest[0][0]:
+                closest = [[dist, ni, nj]]
+            elif dist == closest[0][0]:
+                closest.append([dist,ni,nj])
+        if len(closest) == 1:
+            return closest[0][1], closest[0][2]
+        ri = random.randint(0, len(closest)-1)
+        return closest[ri][1], closest[ri][2]
+
+    def sense(self, d):
+        beep_prob = math.exp(-1 * self.alpha * (d - 1))
+        random_float = random.uniform(0, 0.99)
+        if random_float < beep_prob:
+            return True
+        return False
+
+    def update_scanned_no_beep(self):
+        p_no_beep_i = 0
+        for ki, kj in self.possible_loc:
+            kd = self.A_star((ki,kj),False)
+            p_no_beep_i += (self.memory[ki][kj] * (1 - math.exp(-1 * self.alpha * (kd - 1))))
+        for i, j in self.possible_loc:
+            pj = self.memory[i][j]
+            d = self.A_star((i,j),False)
+            p_no_beep_given_in_j = 1 - math.exp(-1 * self.alpha * (d - 1))
+            self.memory[i][j] = (pj * p_no_beep_given_in_j) / p_no_beep_i
+
+    def update_scanned_yes_beep(self):
+        p_yes_beep_i = 0
+        for ki, kj in self.possible_loc:
+            kd = self.A_star((ki, kj), False)
+            p_yes_beep_i += (self.memory[ki][kj] * math.exp(-1 * self.alpha * (kd - 1)))
+        for i, j in self.possible_loc:
+            pj = self.memory[i][j]
+            d = self.A_star((i, j), False)
+            p_yes_beep_given_in_j = math.exp(-1 * self.alpha * (d - 1))
+            self.memory[i][j] = (pj * p_yes_beep_given_in_j) / p_yes_beep_i
+
+    def update_prob_not_found(self):
+        pi = self.memory[self.bot_loc[0]][self.bot_loc[1]]
+        self.memory[self.bot_loc[0]][self.bot_loc[1]] = 0.0
+        self.possible_loc.remove(self.bot_loc)
+        self.impossible_loc.add(self.bot_loc)
+        for i, j in self.possible_loc:
+            self.memory[i][j] /= (1 - pi)

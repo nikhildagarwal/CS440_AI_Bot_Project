@@ -76,15 +76,20 @@ def test_bot2C(dim: int, k: int) -> float:
     return test_bot2B(dim,k)
 
 
-def test_bot3(dim: int, alpha: int) -> float:
+def test_bot3(dim: int, alpha: float) -> float:
     s = ship_34.Ship(dim, BOT_3, alpha)
     print(s)
-    print(s.impossible_loc)
+    next_cell = s.next_cell_bot3(s.possible_loc)
+    s.A_star(next_cell,True)
+    print(s)
+    if s.bot_loc != s.leak_loc[0]:
+        s.update_prob_not_found()
+    print(s)
     return 0.0
 
 
 if __name__ == '__main__':
-    ans = []
+    """ans = []
     for k in range(1,25):                               # k values from 1 to 24 (largest range for 50x50 ship)
         t = 0
         ts = 0
@@ -94,7 +99,8 @@ if __name__ == '__main__':
             if i % 50 == 0:
                 print("k:",k,"i:",i," prob:",ts/t)
         ans.append(ts/t)
-    print(ans)
+    print(ans)"""
+    test_bot3(5,0.5)
 
 
 
