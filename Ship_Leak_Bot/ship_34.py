@@ -212,146 +212,104 @@ class Ship:
         """
         return 0 <= i < self.dim and 0 <= j < self.dim
 
-    def A_star(self, goal, move_bot):
+    def A_start_path(self, beg, end):
         searchable = []
-        si, sj = self.bot_loc
-        start = [0, get_distance(si, sj, goal[0], goal[1]), self.bot_loc]
-        key = {self.bot_loc: start}
+        ei, ej = end
+        start = [0, 0, beg, None]
         heapq.heappush(searchable, start)
         visited = {0}
         visited.remove(0)
+        key = {beg: start}
         while searchable:
             curr = heapq.heappop(searchable)
-            curr_path_sum, curr_dist, curr_loc = curr
+            curr_dist, curr_heuristic, curr_loc, prev = curr
             key.pop(curr_loc)
-            if curr_loc == goal:
-                if move_bot:
-                    self.total_time += curr_path_sum
-                    self.layout[self.bot_loc[0]][self.bot_loc[1]] = OPEN
-                    self.bot_loc = curr_loc
-                    self.layout[self.bot_loc[0]][self.bot_loc[1]] = self.bot
-                return curr_path_sum
+            if curr_loc == end:
+                path = []
+                head = curr
+                while head[3] is not None:
+                    path.insert(0,head[2])
+                    head = head[3]
+                return path
             visited.add(curr_loc)
             i, j = curr_loc
-            nn = np.array([(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)])
-            np.random.shuffle(nn)
-            for c in range(len(nn)):
-                neighbor = tuple(nn[c])
-                new = [curr_path_sum + 1, get_distance(neighbor[0], neighbor[1], self.bot_loc[0], self.bot_loc[1]),
-                       neighbor]
-                existing = key.get(neighbor, None)
-                if existing is None:
-                    heapq.heappush(searchable, new)
-                    key[neighbor] = new
-                else:
-                    if existing[0] > new[0]:
-                        existing[0] = new[0]
-                        heapq.heapify(searchable)
-        return None
+            neighbors = [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
+            for neighbor in neighbors:
+                ni, nj = neighbor
+                if self.on_ship(ni, nj) and neighbor not in visited and self.layout[i][j] != WALL:
+                    new = [curr_dist + 1, get_distance(neighbor[0], neighbor[1], ei, ej),
+                           neighbor, curr]
+                    existing = key.get(neighbor, None)
+                    if existing is None:
+                        heapq.heappush(searchable, new)
+                        key[neighbor] = new
+                    else:
+                        if existing[0] > new[0]:
+                            existing[0] = new[0]
+                            existing[3] = curr
+                            heapq.heapify(searchable)
 
-    def A_star_stop_along_path(self, goal):
-        searchable = []
-        si, sj = self.bot_loc
-        start = [0, get_distance(si, sj, goal[0], goal[1]), self.bot_loc, None]
-        key = {self.bot_loc: start}
-        heapq.heappush(searchable, start)
-        visited = {0}
-        visited.remove(0)
-        while searchable:
-            curr = heapq.heappop(searchable)
-            curr_path_sum, curr_dist, curr_loc, prev_node = curr
-            key.pop(curr_loc)
-            if curr_loc == goal:
-                self.total_time += curr_path_sum
-                self.layout[self.bot_loc[0]][self.bot_loc[1]] = OPEN
-                self.bot_loc = curr_loc
-                self.layout[self.bot_loc[0]][self.bot_loc[1]] = self.bot
-                c = 1
-                while prev_node is not None:
-                    if prev_node[2] == self.leak_loc[0]:
-                        self.total_time -= c
-                        return True
-                    if prev_node[2] in self.possible_loc:
-                        self.update_prob_not_found_loc(prev_node[2][0],prev_node[2][1])
-                    prev_node = prev_node[3]
-                    c += 1
-                return False
-            visited.add(curr_loc)
-            i, j = curr_loc
-            nn = np.array([(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)])
-            np.random.shuffle(nn)
-            for c in range(len(nn)):
-                neighbor = tuple(nn[c])
-                new = [curr_path_sum + 1, get_distance(neighbor[0], neighbor[1], self.bot_loc[0], self.bot_loc[1]),
-                       neighbor, curr]
-                existing = key.get(neighbor, None)
-                if existing is None:
-                    heapq.heappush(searchable, new)
-                    key[neighbor] = new
-                else:
-                    if existing[0] > new[0]:
-                        existing[0] = new[0]
-                        existing[3] = curr
-                        heapq.heapify(searchable)
-        return None
-
-    def get_closest_vals_in_set(self, my_set):
-        i, j = self.bot_loc
-        closest = [[70, None, None]]
-        for tup in my_set:
-            ni, nj = tup
-            dist = get_distance(ni, nj, i, j)
-            if dist < closest[0][0]:
-                closest = [[dist, ni, nj]]
-            elif dist == closest[0][0]:
-                closest.append([dist, ni, nj])
-        return closest
-
-    def next_cell_bot3(self, my_set):
-        largest = [[0, None, None]]
-        for ti, tj in my_set:
-            val = self.memory[ti][tj]
-            if val > largest[0][0]:
-                largest = [[val, ti, tj]]
-            elif val == largest[0][0]:
-                largest.append([val, ti, tj])
-        if len(largest) == 1:
-            return largest[0][1], largest[0][2]
-        i, j = self.bot_loc
-        closest = [[70, None, None]]
-        for p, ni, nj in largest:
-            dist = get_distance(i, j, ni, nj)
-            if dist < closest[0][0]:
-                closest = [[dist, ni, nj]]
-            elif dist == closest[0][0]:
-                closest.append([dist,ni,nj])
-        if len(closest) == 1:
-            return closest[0][1], closest[0][2]
-        ri = random.randint(0, len(closest)-1)
-        return closest[ri][1], closest[ri][2]
-
-    def sense(self, d):
-        beep_prob = math.exp(-1 * self.alpha * (d - 1))
-        random_float = random.uniform(0, 0.99)
-        self.total_time += 1
-        if random_float < beep_prob:
-            return True
-        return False
-
-
-
-    def update_prob_not_found(self):
-        pi = self.memory[self.bot_loc[0]][self.bot_loc[1]]
-        self.memory[self.bot_loc[0]][self.bot_loc[1]] = 0.0
-        self.possible_loc.remove(self.bot_loc)
-        self.impossible_loc.add(self.bot_loc)
-        for i, j in self.possible_loc:
-            self.memory[i][j] /= (1 - pi)
-
-    def update_prob_not_found_loc(self, i, j):
-        pi = self.memory[i][j]
+    def update_all_not_found(self, curr_loc):
+        i, j = curr_loc
+        self.possible_loc.remove(curr_loc)
+        self.impossible_loc.add(curr_loc)
+        pA = self.memory[i][j]
         self.memory[i][j] = 0.0
-        self.possible_loc.remove((i,j))
-        self.impossible_loc.add((i,j))
+        inv = 1 - pA
         for ki, kj in self.possible_loc:
-            self.memory[ki][kj] /= (1 - pi)
+            self.memory[ki][kj] /= inv
+
+    def distances_to_possible_cells(self, start):
+        master = {}
+        queue = [(start,0)]
+        in_queue = {start}
+        visited = {0}
+        visited.remove(0)
+        while queue:
+            curr, lvl = queue.pop(0)
+            in_queue.remove(curr)
+            i, j = curr
+            visited.add(curr)
+            if curr in self.possible_loc:
+                master[curr] = lvl
+            ip1 = (i+1,j)
+            im1 = (i-1,j)
+            jp1 = (i, j+1)
+            jm1 = (i, j-1)
+            if self.on_ship(i+1, j) and ip1 not in visited and self.layout[i+1][j] != WALL and ip1 not in in_queue:
+                queue.append((ip1, lvl + 1))
+                in_queue.add(ip1)
+            if self.on_ship(i - 1, j) and im1 not in visited and self.layout[i - 1][j] != WALL and im1 not in in_queue:
+                queue.append((im1, lvl + 1))
+                in_queue.add(im1)
+            if self.on_ship(i, j+1) and jp1 not in visited and self.layout[i][j + 1] != WALL and jp1 not in in_queue:
+                queue.append((jp1, lvl + 1))
+                in_queue.add(jp1)
+            if self.on_ship(i, j-1) and jm1 not in visited and self.layout[i][j-1] != WALL and jm1 not in in_queue:
+                queue.append((jm1, lvl + 1))
+                in_queue.add(jm1)
+        return master
+
+    def update_given_no_beep(self, current):
+        master = self.distances_to_possible_cells(current)
+        marginal_no_beep = 0
+        for loc in master:
+            i, j = loc
+            no_beep = 1 - math.exp(-1 * self.alpha * (master[loc] - 1))
+            marginal_no_beep += (self.memory[i][j] * no_beep)
+        for loc in master:
+            i, j = loc
+            no_beep = 1 - math.exp(-1 * self.alpha * (master[loc] - 1))
+            self.memory[i][j] *= (no_beep / marginal_no_beep)
+
+    def update_given_beep(self, current):
+        master = self.distances_to_possible_cells(current)
+        marginal_yes_beep = 0
+        for loc in master:
+            i, j = loc
+            yes_beep = math.exp(-1 * self.alpha * (master[loc] - 1))
+            marginal_yes_beep += (self.memory[i][j] * yes_beep)
+        for loc in master:
+            i, j = loc
+            yes_beep = math.exp(-1 * self.alpha * (master[loc] - 1))
+            self.memory[i][j] *= (yes_beep / marginal_yes_beep)

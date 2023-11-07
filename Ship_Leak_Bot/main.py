@@ -79,22 +79,9 @@ def test_bot2C(dim: int, k: int) -> float:
 def test_bot3(dim: int, alpha: float) -> float:
     s = ship_34.Ship(dim, BOT_3, alpha)
     print(s)
-    while not s.found:
-        next_cell = s.next_cell_bot3(s.possible_loc)
-        if s.A_star_stop_along_path(next_cell):
-            return s.total_time
-        if s.bot_loc == s.leak_loc[0]:
-            s.found = True
-            print(s)
-            return s.total_time
-        s.update_prob_not_found()
-        print(s)
-        beeped = s.sense(s.A_star(s.leak_loc[0],False))
-        if beeped:
-            s.update_scanned_yes_beep()
-        else:
-            s.update_scanned_no_beep()
-        print(s)
+    s.update_given_beep(s.bot_loc)
+    print(s)
+    return 0.0
 
 
 def k_tester(trial_count, bot):
@@ -115,7 +102,8 @@ def k_tester(trial_count, bot):
 
 
 if __name__ == '__main__':
-    a = test_bot3(25,0.5)
+    test_bot3(5,0.5)
+
 
 
 
