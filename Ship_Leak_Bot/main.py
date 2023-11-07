@@ -79,29 +79,43 @@ def test_bot2C(dim: int, k: int) -> float:
 def test_bot3(dim: int, alpha: float) -> float:
     s = ship_34.Ship(dim, BOT_3, alpha)
     print(s)
-    next_cell = s.next_cell_bot3(s.possible_loc)
-    s.A_star(next_cell,True)
-    print(s)
-    if s.bot_loc != s.leak_loc[0]:
+    while not s.found:
+        next_cell = s.next_cell_bot3(s.possible_loc)
+        if s.A_star_stop_along_path(next_cell):
+            return s.total_time
+        if s.bot_loc == s.leak_loc[0]:
+            s.found = True
+            print(s)
+            return s.total_time
         s.update_prob_not_found()
-    print(s)
-    return 0.0
+        print(s)
+        beeped = s.sense(s.A_star(s.leak_loc[0],False))
+        if beeped:
+            s.update_scanned_yes_beep()
+        else:
+            s.update_scanned_no_beep()
+        print(s)
+
+
+def k_tester(trial_count, bot):
+    output = []
+    for k in range(1, 25):                          # k values from 1 to 24 (largest range for 50x50 ship)
+        t = 0
+        ts = 0
+        for i in range(trial_count):                # 1000 trials per k value
+            t += 1
+            if bot == BOT_1:
+                ts += test_bot1(50, k)
+            elif bot == BOT_2:
+                ts += test_bot2C(50,k)          # change test function to test different versions of bot 2
+            if i % 50 == 0:
+                print("k:", k, "i:", i, " prob:", ts / t)
+        output.append(ts / t)
+    print(output)
 
 
 if __name__ == '__main__':
-    """ans = []
-    for k in range(1,25):                               # k values from 1 to 24 (largest range for 50x50 ship)
-        t = 0
-        ts = 0
-        for i in range(1000):                            # 1000 trials per k value
-            t += 1
-            ts += test_bot2C(50,k)                   # change test method for different bots
-            if i % 50 == 0:
-                print("k:",k,"i:",i," prob:",ts/t)
-        ans.append(ts/t)
-    print(ans)"""
-    test_bot3(5,0.5)
-
+    a = test_bot3(25,0.5)
 
 
 

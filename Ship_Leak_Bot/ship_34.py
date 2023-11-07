@@ -249,6 +249,52 @@ class Ship:
                         heapq.heapify(searchable)
         return None
 
+    def A_star_stop_along_path(self, goal):
+        searchable = []
+        si, sj = self.bot_loc
+        start = [0, get_distance(si, sj, goal[0], goal[1]), self.bot_loc, None]
+        key = {self.bot_loc: start}
+        heapq.heappush(searchable, start)
+        visited = {0}
+        visited.remove(0)
+        while searchable:
+            curr = heapq.heappop(searchable)
+            curr_path_sum, curr_dist, curr_loc, prev_node = curr
+            key.pop(curr_loc)
+            if curr_loc == goal:
+                self.total_time += curr_path_sum
+                self.layout[self.bot_loc[0]][self.bot_loc[1]] = OPEN
+                self.bot_loc = curr_loc
+                self.layout[self.bot_loc[0]][self.bot_loc[1]] = self.bot
+                c = 1
+                while prev_node is not None:
+                    if prev_node[2] == self.leak_loc[0]:
+                        self.total_time -= c
+                        return True
+                    if prev_node[2] in self.possible_loc:
+                        self.update_prob_not_found_loc(prev_node[2][0],prev_node[2][1])
+                    prev_node = prev_node[3]
+                    c += 1
+                return False
+            visited.add(curr_loc)
+            i, j = curr_loc
+            nn = np.array([(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)])
+            np.random.shuffle(nn)
+            for c in range(len(nn)):
+                neighbor = tuple(nn[c])
+                new = [curr_path_sum + 1, get_distance(neighbor[0], neighbor[1], self.bot_loc[0], self.bot_loc[1]),
+                       neighbor, curr]
+                existing = key.get(neighbor, None)
+                if existing is None:
+                    heapq.heappush(searchable, new)
+                    key[neighbor] = new
+                else:
+                    if existing[0] > new[0]:
+                        existing[0] = new[0]
+                        existing[3] = curr
+                        heapq.heapify(searchable)
+        return None
+
     def get_closest_vals_in_set(self, my_set):
         i, j = self.bot_loc
         closest = [[70, None, None]]
@@ -287,31 +333,12 @@ class Ship:
     def sense(self, d):
         beep_prob = math.exp(-1 * self.alpha * (d - 1))
         random_float = random.uniform(0, 0.99)
+        self.total_time += 1
         if random_float < beep_prob:
             return True
         return False
 
-    def update_scanned_no_beep(self):
-        p_no_beep_i = 0
-        for ki, kj in self.possible_loc:
-            kd = self.A_star((ki,kj),False)
-            p_no_beep_i += (self.memory[ki][kj] * (1 - math.exp(-1 * self.alpha * (kd - 1))))
-        for i, j in self.possible_loc:
-            pj = self.memory[i][j]
-            d = self.A_star((i,j),False)
-            p_no_beep_given_in_j = 1 - math.exp(-1 * self.alpha * (d - 1))
-            self.memory[i][j] = (pj * p_no_beep_given_in_j) / p_no_beep_i
 
-    def update_scanned_yes_beep(self):
-        p_yes_beep_i = 0
-        for ki, kj in self.possible_loc:
-            kd = self.A_star((ki, kj), False)
-            p_yes_beep_i += (self.memory[ki][kj] * math.exp(-1 * self.alpha * (kd - 1)))
-        for i, j in self.possible_loc:
-            pj = self.memory[i][j]
-            d = self.A_star((i, j), False)
-            p_yes_beep_given_in_j = math.exp(-1 * self.alpha * (d - 1))
-            self.memory[i][j] = (pj * p_yes_beep_given_in_j) / p_yes_beep_i
 
     def update_prob_not_found(self):
         pi = self.memory[self.bot_loc[0]][self.bot_loc[1]]
@@ -320,3 +347,11 @@ class Ship:
         self.impossible_loc.add(self.bot_loc)
         for i, j in self.possible_loc:
             self.memory[i][j] /= (1 - pi)
+
+    def update_prob_not_found_loc(self, i, j):
+        pi = self.memory[i][j]
+        self.memory[i][j] = 0.0
+        self.possible_loc.remove((i,j))
+        self.impossible_loc.add((i,j))
+        for ki, kj in self.possible_loc:
+            self.memory[ki][kj] /= (1 - pi)
