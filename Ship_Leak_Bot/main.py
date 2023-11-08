@@ -78,10 +78,24 @@ def test_bot2C(dim: int, k: int) -> float:
 
 def test_bot3(dim: int, alpha: float) -> float:
     s = ship_34.Ship(dim, BOT_3, alpha)
-    print(s)
-    s.update_given_beep(s.bot_loc)
-    print(s)
-    return 0.0
+    s.max_pair[1] = s.get_max_loc()
+    while not s.found:
+        next_cell = s.max_pair[1]
+        path_to_next_cell = s.A_start_path(s.bot_loc,next_cell)
+        for loc in path_to_next_cell:
+            s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
+            s.bot_loc = loc
+            s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
+            s.total_time += 1
+            if s.bot_loc == s.leak_loc[0]:
+                return s.total_time
+            if s.bot_loc in s.possible_loc:
+                s.update_all_not_found(s.bot_loc)
+        beeped = s.scan()
+        if beeped:
+            s.update_given_beep(s.bot_loc)
+        else:
+            s.update_given_no_beep(s.bot_loc)
 
 
 def k_tester(trial_count, bot):
@@ -96,14 +110,29 @@ def k_tester(trial_count, bot):
             elif bot == BOT_2:
                 ts += test_bot2C(50,k)          # change test function to test different versions of bot 2
             if i % 50 == 0:
-                print("k:", k, "i:", i, " prob:", ts / t)
+                print("k:", k, "i:", i, " time:", ts / t)
         output.append(ts / t)
     print(output)
 
 
-if __name__ == '__main__':
-    test_bot3(5,0.5)
+def alpha_tester(trial_count, bot):
+    output = []
+    for a in range(105,201):
+        if a % 5 == 0:
+            t = 0
+            ts = 0
+            for i in range(trial_count):
+                t += 1
+                if bot == BOT_3:
+                    ts += test_bot3(50, a/100)
+                if i % 50 == 0:
+                    print("a:", a/100,"i:",i," time:", ts/t)
+            output.append(ts/t)
+    print(output)
 
+
+if __name__ == '__main__':
+    alpha_tester(401,BOT_3)
 
 
 
