@@ -126,42 +126,68 @@ def test_bot4(dim: int, a: float) -> float:
 def find_first_bot(s: ship_56.Ship) -> None:
     while not s.detected:
         closest_cell = s.get_closest_val_in_set(s.possible_loc)
-        s.A_star(closest_cell)
-        if s.bot_loc in s.leak_loc:
-            s.leak_loc.remove(s.bot_loc)
-            s.possible_loc.remove(s.bot_loc)
-            return
+        path = s.A_start_path(s.bot_loc, closest_cell)
+        s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
+        for loc in path:
+            i, j = loc
+            s.memory[i][j] = IMPOSSIBLE
+            try:
+                s.possible_loc.remove(loc)
+            except KeyError:
+                pass
+
+            s.total_time += 1
+            if loc in s.leak_loc:
+                s.leak_loc.remove(loc)
+                s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
+                return
+        s.bot_loc = path[-1]
         s.scan_box_leak(s.bot_loc[0],s.bot_loc[1])
-    if s.bot_loc in s.leak_loc:
-        s.leak_loc.remove(s.bot_loc)
-        s.memory[s.bot_loc[0]][s.bot_loc[1]] = IMPOSSIBLE
-        s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
-        return
-    s.known_loc.remove(s.bot_loc)
-    s.layout[s.bot_loc[0]][s.bot_loc[1]] = IMPOSSIBLE
-    s.memory[s.bot_loc[0]][s.bot_loc[1]] = IMPOSSIBLE
-    while not s.found:
-        closest_cell = s.get_closest_val_in_set(s.known_loc)
-        s.A_star(closest_cell)
+    s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
+    while s.known_loc:
+        cc = s.get_closest_val_in_set(s.known_loc)
+        ci, cj = cc
+        s.memory[ci][cj] = IMPOSSIBLE
+        path = s.A_start_path(s.bot_loc,cc)
+        s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
+        s.total_time += len(path)
+        s.bot_loc = path[-1]
+        s.known_loc.remove(cc)
         if s.bot_loc in s.leak_loc:
             s.leak_loc.remove(s.bot_loc)
-            s.memory[s.bot_loc[0]][s.bot_loc[1]] = IMPOSSIBLE
-            s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
-            return
-        s.known_loc.remove(s.bot_loc)
-        s.memory[s.bot_loc[0]][s.bot_loc[1]] = IMPOSSIBLE
+            s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
+    s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
+
+
+def find_second_bot(s: ship_56.Ship) -> None:
+    s.detected = False
+    while not s.detected:
+        cc = s.get_closest_val_in_set(s.possible_loc)
+        path = s.A_start_path(s.bot_loc,cc)
+        for loc in path:
+            s.total_time += 1
+            if loc in s.leak_loc:
+                return
+            try:
+                s.possible_loc.remove(loc)
+            except KeyError:
+                pass
+        s.bot_loc = path[-1]
+        s.scan_box_leak(s.bot_loc[0],s.bot_loc[1])
+    print(s)
 
 
 def test_bot5(dim: int, k: int) -> float:
     s = ship_56.Ship(dim, BOT_5, k)
+    print(s)
     find_first_bot(s)
-    for loc in s.known_loc:
-        i,j = loc
-        s.memory[i][j] = POSSIBLE
-        s.possible_loc.add(loc)
-    s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
-    s.memory[s.bot_loc[0]][s.bot_loc[1]] = IMPOSSIBLE
-    s.known_loc.clear()
+    print(s)
+    print(s.possible_loc)
+    print(s.bot_loc)
+    print(s.leak_loc)
+    if not s.leak_loc:
+        return s.total_time
+    find_second_bot(s)
 
 
 def k_tester(trial_count, bot):
@@ -197,4 +223,5 @@ def alpha_tester(trial_count, bot):
 
 
 if __name__ == '__main__':
-    test_bot5(5,1)
+    for i in range(1):
+        print(test_bot5(5,1))

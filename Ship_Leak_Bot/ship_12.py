@@ -389,14 +389,16 @@ class Ship:
             np.random.shuffle(nn)
             for c in range(len(nn)):
                 neighbor = tuple(nn[c])
-                new = [curr_path_sum + 1, get_distance(neighbor[0], neighbor[1], self.bot_loc[0], self.bot_loc[1]),
-                       neighbor]
-                existing = key.get(neighbor, None)
-                if existing is None:
-                    heapq.heappush(searchable, new)
-                    key[neighbor] = new
-                else:
-                    if existing[0] > new[0]:
-                        existing[0] = new[0]
-                        heapq.heapify(searchable)
+                ni, nj = neighbor
+                if self.on_ship(ni, nj) and self.layout[ni][nj] != WALL and neighbor not in visited:
+                    new = [curr_path_sum + 1, get_distance(neighbor[0], neighbor[1], self.bot_loc[0], self.bot_loc[1]),
+                           neighbor]
+                    existing = key.get(neighbor, None)
+                    if existing is None:
+                        heapq.heappush(searchable, new)
+                        key[neighbor] = new
+                    else:
+                        if existing[0] > new[0]:
+                            existing[0] = new[0]
+                            heapq.heapify(searchable)
         return

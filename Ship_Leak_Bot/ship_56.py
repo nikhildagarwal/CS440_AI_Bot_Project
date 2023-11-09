@@ -382,38 +382,39 @@ class Ship:
         ri = random.randint(0,len(closest)-1)
         return closest[ri][1], closest[ri][2]
 
-    def A_star(self, goal):
+    def A_start_path(self, beg, end):
         searchable = []
-        si, sj = self.bot_loc
-        start = [0, get_distance(si, sj, goal[0], goal[1]), self.bot_loc]
-        key = {self.bot_loc: start}
+        ei, ej = end
+        start = [0, 0, beg, None]
         heapq.heappush(searchable, start)
         visited = {0}
         visited.remove(0)
+        key = {beg: start}
         while searchable:
             curr = heapq.heappop(searchable)
-            curr_path_sum, curr_dist, curr_loc = curr
+            curr_dist, curr_heuristic, curr_loc, prev = curr
             key.pop(curr_loc)
-            if curr_loc == goal:
-                self.total_time += curr_path_sum
-                self.layout[self.bot_loc[0]][self.bot_loc[1]] = OPEN
-                self.bot_loc = curr_loc
-                self.layout[self.bot_loc[0]][self.bot_loc[1]] = self.bot
-                return
+            if curr_loc == end:
+                path = []
+                head = curr
+                while head[3] is not None:
+                    path.insert(0, head[2])
+                    head = head[3]
+                return path
             visited.add(curr_loc)
             i, j = curr_loc
-            nn = np.array([(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)])
-            np.random.shuffle(nn)
-            for c in range(len(nn)):
-                neighbor = tuple(nn[c])
-                new = [curr_path_sum + 1, get_distance(neighbor[0], neighbor[1], self.bot_loc[0], self.bot_loc[1]),
-                       neighbor]
-                existing = key.get(neighbor, None)
-                if existing is None:
-                    heapq.heappush(searchable, new)
-                    key[neighbor] = new
-                else:
-                    if existing[0] > new[0]:
-                        existing[0] = new[0]
-                        heapq.heapify(searchable)
-        return
+            neighbors = [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
+            for neighbor in neighbors:
+                ni, nj = neighbor
+                if self.on_ship(ni, nj) and neighbor not in visited and self.layout[i][j] != WALL:
+                    new = [curr_dist + 1, get_distance(neighbor[0], neighbor[1], ei, ej),
+                           neighbor, curr]
+                    existing = key.get(neighbor, None)
+                    if existing is None:
+                        heapq.heappush(searchable, new)
+                        key[neighbor] = new
+                    else:
+                        if existing[0] > new[0]:
+                            existing[0] = new[0]
+                            existing[3] = curr
+                            heapq.heapify(searchable)
