@@ -56,6 +56,5 @@ def plotter(k_arr: list[int], bot_data: list[list[float]], bot_labels: list[str]
 
 if __name__ == "__main__":
     plotter(alpha, [bot_3, bot_4], ["Bot 3","Bot 4"], ['r','b'],'alpha')
-    exit(0)
     plotter(k, [bot_1, bot_2A, bot_2B], ["Bot 1", "Bot 2A", "Bot 2B"], ['r', 'b', 'g'], 'k')
     plotter(k, [bot_1, bot_2C], ["Bot 1", "Bot 2"], ['r','black'],'k')

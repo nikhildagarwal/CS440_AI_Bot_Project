@@ -1,5 +1,6 @@
 import ship_12
 import ship_34
+import ship_56
 from ship_12 import LEAK, WALL, OPEN, BOT_1, BOT_3, BOT_2, BOT_4, BOT_5, BOT_6, BOT_7, BOT_8, BOT_9
 from ship_12 import IMPOSSIBLE, POSSIBLE, KNOWN
 from data import alpha
@@ -24,7 +25,6 @@ def test_bot1(dim: int, k: int) -> float:
             return s.total_time
         s.known_loc.remove(s.bot_loc)
         s.memory[s.bot_loc[0]][s.bot_loc[1]] = IMPOSSIBLE
-    return s.total_time
 
 
 def test_bot2A(dim: int, k: int) -> float:
@@ -73,16 +73,16 @@ def test_bot2B(dim: int, k: int) -> float:
 
 def test_bot2C(dim: int, k: int) -> float:
     if k < 5:
-        return test_bot2A(dim,k)
-    return test_bot2B(dim,k)
+        return test_bot2A(dim, k)
+    return test_bot2B(dim, k)
 
 
-def test_bot3(dim: int, alpha: float) -> float:
-    s = ship_34.Ship(dim, BOT_3, alpha)
+def test_bot3(dim: int, a: float) -> float:
+    s = ship_34.Ship(dim, BOT_3, a)
     s.max_pair[1] = s.get_max_loc()
     while not s.found:
         next_cell = s.max_pair[1]
-        path_to_next_cell = s.A_start_path(s.bot_loc,next_cell)
+        path_to_next_cell = s.A_start_path(s.bot_loc, next_cell)
         for loc in path_to_next_cell:
             s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
             s.bot_loc = loc
@@ -99,8 +99,8 @@ def test_bot3(dim: int, alpha: float) -> float:
             s.update_given_no_beep(s.bot_loc)
 
 
-def test_bot4(dim: int, alpha: float) -> float:
-    s = ship_34.Ship(dim, BOT_3, alpha)
+def test_bot4(dim: int, a: float) -> float:
+    s = ship_34.Ship(dim, BOT_3, a)
     s.max_pair[1] = s.get_max_loc()
     while not s.found:
         next_cell = s.get_max_loc_in_grid(8)
@@ -123,17 +123,58 @@ def test_bot4(dim: int, alpha: float) -> float:
             s.update_given_no_beep(s.bot_loc)
 
 
+def find_first_bot(s: ship_56.Ship) -> None:
+    while not s.detected:
+        closest_cell = s.get_closest_val_in_set(s.possible_loc)
+        s.A_star(closest_cell)
+        if s.bot_loc in s.leak_loc:
+            s.leak_loc.remove(s.bot_loc)
+            s.possible_loc.remove(s.bot_loc)
+            return
+        s.scan_box_leak(s.bot_loc[0],s.bot_loc[1])
+    if s.bot_loc in s.leak_loc:
+        s.leak_loc.remove(s.bot_loc)
+        s.memory[s.bot_loc[0]][s.bot_loc[1]] = IMPOSSIBLE
+        s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
+        return
+    s.known_loc.remove(s.bot_loc)
+    s.layout[s.bot_loc[0]][s.bot_loc[1]] = IMPOSSIBLE
+    s.memory[s.bot_loc[0]][s.bot_loc[1]] = IMPOSSIBLE
+    while not s.found:
+        closest_cell = s.get_closest_val_in_set(s.known_loc)
+        s.A_star(closest_cell)
+        if s.bot_loc in s.leak_loc:
+            s.leak_loc.remove(s.bot_loc)
+            s.memory[s.bot_loc[0]][s.bot_loc[1]] = IMPOSSIBLE
+            s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
+            return
+        s.known_loc.remove(s.bot_loc)
+        s.memory[s.bot_loc[0]][s.bot_loc[1]] = IMPOSSIBLE
+
+
+def test_bot5(dim: int, k: int) -> float:
+    s = ship_56.Ship(dim, BOT_5, k)
+    find_first_bot(s)
+    for loc in s.known_loc:
+        i,j = loc
+        s.memory[i][j] = POSSIBLE
+        s.possible_loc.add(loc)
+    s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
+    s.memory[s.bot_loc[0]][s.bot_loc[1]] = IMPOSSIBLE
+    s.known_loc.clear()
+
+
 def k_tester(trial_count, bot):
     output = []
-    for k in range(1, 25):                          # k values from 1 to 24 (largest range for 50x50 ship)
+    for k in range(1, 25):  # k values from 1 to 24 (largest range for 50x50 ship)
         t = 0
         ts = 0
-        for i in range(trial_count):                # 1000 trials per k value
+        for i in range(trial_count):  # 1000 trials per k value
             t += 1
             if bot == BOT_1:
                 ts += test_bot1(50, k)
             elif bot == BOT_2:
-                ts += test_bot2C(50,k)          # change test function to test different versions of bot 2
+                ts += test_bot2C(50, k)  # change test function to test different versions of bot 2
             if i % 50 == 0:
                 print("k:", k, "i:", i, " time:", ts / t)
         output.append(ts / t)
@@ -148,16 +189,12 @@ def alpha_tester(trial_count, bot):
         for i in range(trial_count):
             t += 1
             if bot == BOT_3:
-                ts += test_bot4(50, a)                  # change test function for bot
+                ts += test_bot4(50, a)  # change test function for bot
             if i % 50 == 0:
-                print("a:", a,"i:",i," time:", ts/t)
-        output.append(ts/t)
+                print("a:", a, "i:", i, " time:", ts / t)
+        output.append(ts / t)
     print(output)
 
 
 if __name__ == '__main__':
-    alpha_tester(400,BOT_3)
-
-
-
-
+    test_bot5(5,1)
