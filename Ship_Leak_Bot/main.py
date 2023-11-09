@@ -2,6 +2,7 @@ import ship_12
 import ship_34
 from ship_12 import LEAK, WALL, OPEN, BOT_1, BOT_3, BOT_2, BOT_4, BOT_5, BOT_6, BOT_7, BOT_8, BOT_9
 from ship_12 import IMPOSSIBLE, POSSIBLE, KNOWN
+from data import alpha
 
 
 def test_bot1(dim: int, k: int) -> float:
@@ -98,6 +99,30 @@ def test_bot3(dim: int, alpha: float) -> float:
             s.update_given_no_beep(s.bot_loc)
 
 
+def test_bot4(dim: int, alpha: float) -> float:
+    s = ship_34.Ship(dim, BOT_3, alpha)
+    s.max_pair[1] = s.get_max_loc()
+    while not s.found:
+        next_cell = s.get_max_loc_in_grid(8)
+        if next_cell is None:
+            next_cell = s.max_pair[1]
+        path_to_next_cell = s.A_start_path(s.bot_loc, next_cell)
+        for loc in path_to_next_cell:
+            s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
+            s.bot_loc = loc
+            s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
+            s.total_time += 1
+            if s.bot_loc == s.leak_loc[0]:
+                return s.total_time
+            if s.bot_loc in s.possible_loc:
+                s.update_all_not_found(s.bot_loc)
+        beeped = s.scan()
+        if beeped:
+            s.update_given_beep(s.bot_loc)
+        else:
+            s.update_given_no_beep(s.bot_loc)
+
+
 def k_tester(trial_count, bot):
     output = []
     for k in range(1, 25):                          # k values from 1 to 24 (largest range for 50x50 ship)
@@ -117,22 +142,21 @@ def k_tester(trial_count, bot):
 
 def alpha_tester(trial_count, bot):
     output = []
-    for a in range(105,201):
-        if a % 5 == 0:
-            t = 0
-            ts = 0
-            for i in range(trial_count):
-                t += 1
-                if bot == BOT_3:
-                    ts += test_bot3(50, a/100)
-                if i % 50 == 0:
-                    print("a:", a/100,"i:",i," time:", ts/t)
-            output.append(ts/t)
+    for a in alpha:
+        t = 0
+        ts = 0
+        for i in range(trial_count):
+            t += 1
+            if bot == BOT_3:
+                ts += test_bot4(50, a)                  # change test function for bot
+            if i % 50 == 0:
+                print("a:", a,"i:",i," time:", ts/t)
+        output.append(ts/t)
     print(output)
 
 
 if __name__ == '__main__':
-    alpha_tester(401,BOT_3)
+    alpha_tester(400,BOT_3)
 
 
 

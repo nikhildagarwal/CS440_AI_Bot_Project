@@ -345,3 +345,19 @@ class Ship:
                 valid.append(neighbor)
         ri = random.randint(0,len(valid)-1)
         return valid[ri]
+
+    def get_max_loc_in_grid(self, k):
+        holder = [-1,[]]
+        i, j = self.bot_loc
+        for r in range(i - k, i + k + 1):
+            for c in range(j - k, j + k + 1):
+                tup = (r,c)
+                if self.on_ship(r,c) and tup in self.possible_loc:
+                    if self.memory[r][c] > holder[0]:
+                        holder = [self.memory[r][c],[tup]]
+                    elif self.memory[r][c] == holder[0]:
+                        holder[1].append(tup)
+        if not holder[1]:
+            return None
+        ri = random.randint(0,len(holder[1])-1)
+        return holder[1][ri]
