@@ -1,9 +1,196 @@
 import ship_12
 import ship_34
 import ship_56
+import ship_789
 from ship_12 import LEAK, WALL, OPEN, BOT_1, BOT_3, BOT_2, BOT_4, BOT_5, BOT_6, BOT_7, BOT_8, BOT_9
 from ship_12 import IMPOSSIBLE, POSSIBLE, KNOWN
 from data import alpha
+
+
+def find_first_bot(s: ship_56.Ship) -> None:
+    while not s.detected:
+        closest_cell = s.get_closest_val_in_set(s.possible_loc)
+        path = s.A_start_path(s.bot_loc, closest_cell)
+        s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
+        for loc in path:
+            i, j = loc
+            s.memory[i][j] = IMPOSSIBLE
+            try:
+                s.possible_loc.remove(loc)
+            except KeyError:
+                pass
+            s.total_time += 1
+            if loc in s.leak_loc:
+                s.leak_loc.remove(loc)
+                s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
+                return
+        s.bot_loc = path[-1]
+        s.scan_box_leak(s.bot_loc[0],s.bot_loc[1])
+    s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
+    while s.known_loc:
+        cc = s.get_closest_val_in_set(s.known_loc)
+        ci, cj = cc
+        s.memory[ci][cj] = IMPOSSIBLE
+        path = s.A_start_path(s.bot_loc,cc)
+        s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
+        s.total_time += len(path)
+        s.bot_loc = path[-1]
+        s.known_loc.remove(cc)
+        if s.bot_loc in s.leak_loc:
+            s.leak_loc.remove(s.bot_loc)
+            s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
+    s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
+
+
+def find_second_bot(s: ship_56.Ship) -> None:
+    s.detected = False
+    while not s.detected:
+        cc = s.get_closest_val_in_set(s.possible_loc)
+        path = s.A_start_path(s.bot_loc,cc)
+        for loc in path:
+            s.total_time += 1
+            if loc in s.leak_loc:
+                return
+            try:
+                s.possible_loc.remove(loc)
+            except KeyError:
+                pass
+        s.bot_loc = path[-1]
+        s.scan_box_leak(s.bot_loc[0],s.bot_loc[1])
+    s.found = False
+    s.known_loc.remove(s.bot_loc)
+    while not s.found:
+        cc = s.get_closest_val_in_set(s.known_loc)
+        path = s.A_start_path(s.bot_loc,cc)
+        s.total_time += len(path)
+        s.bot_loc = path[-1]
+        if s.bot_loc in s.leak_loc:
+            return
+        s.known_loc.remove(s.bot_loc)
+
+
+def find_first_bot_6A(s: ship_56.Ship) -> None:
+    while not s.detected:
+        closest_cell = s.next_cell_bot2A()
+        path = s.A_start_path(s.bot_loc, closest_cell)
+        s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
+        for loc in path:
+            i, j = loc
+            s.memory[i][j] = IMPOSSIBLE
+            try:
+                s.possible_loc.remove(loc)
+            except KeyError:
+                pass
+            s.total_time += 1
+            if loc in s.leak_loc:
+                s.leak_loc.remove(loc)
+                s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
+                return
+        s.bot_loc = path[-1]
+        s.scan_box_leak(s.bot_loc[0],s.bot_loc[1])
+    s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
+    while s.known_loc:
+        cc = s.get_closest_val_in_set(s.known_loc)
+        ci, cj = cc
+        s.memory[ci][cj] = IMPOSSIBLE
+        path = s.A_start_path(s.bot_loc,cc)
+        s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
+        s.total_time += len(path)
+        s.bot_loc = path[-1]
+        s.known_loc.remove(cc)
+        if s.bot_loc in s.leak_loc:
+            s.leak_loc.remove(s.bot_loc)
+            s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
+    s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
+
+
+def find_second_bot_6A(s: ship_56.Ship) -> None:
+    s.detected = False
+    while not s.detected:
+        cc = s.next_cell_bot2A()
+        path = s.A_start_path(s.bot_loc, cc)
+        for loc in path:
+            s.total_time += 1
+            if loc in s.leak_loc:
+                return
+            try:
+                s.possible_loc.remove(loc)
+            except KeyError:
+                pass
+        s.bot_loc = path[-1]
+        s.scan_box_leak(s.bot_loc[0], s.bot_loc[1])
+    s.found = False
+    s.known_loc.remove(s.bot_loc)
+    while not s.found:
+        cc = s.get_closest_val_in_set(s.known_loc)
+        path = s.A_start_path(s.bot_loc, cc)
+        s.total_time += len(path)
+        s.bot_loc = path[-1]
+        if s.bot_loc in s.leak_loc:
+            return
+        s.known_loc.remove(s.bot_loc)
+
+
+def find_first_bot_6B(s: ship_56.Ship) -> None:
+    while not s.detected:
+        closest_cell = s.next_cell_bot2B()
+        path = s.A_start_path(s.bot_loc, closest_cell)
+        s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
+        for loc in path:
+            i, j = loc
+            s.memory[i][j] = IMPOSSIBLE
+            try:
+                s.possible_loc.remove(loc)
+            except KeyError:
+                pass
+            s.total_time += 1
+            if loc in s.leak_loc:
+                s.leak_loc.remove(loc)
+                s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
+                return
+        s.bot_loc = path[-1]
+        s.scan_box_leak(s.bot_loc[0],s.bot_loc[1])
+    s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
+    while s.known_loc:
+        cc = s.get_closest_val_in_set(s.known_loc)
+        ci, cj = cc
+        s.memory[ci][cj] = IMPOSSIBLE
+        path = s.A_start_path(s.bot_loc,cc)
+        s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
+        s.total_time += len(path)
+        s.bot_loc = path[-1]
+        s.known_loc.remove(cc)
+        if s.bot_loc in s.leak_loc:
+            s.leak_loc.remove(s.bot_loc)
+            s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
+    s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
+
+
+def find_second_bot_6B(s: ship_56.Ship) -> None:
+    s.detected = False
+    while not s.detected:
+        cc = s.next_cell_bot2B()
+        path = s.A_start_path(s.bot_loc, cc)
+        for loc in path:
+            s.total_time += 1
+            if loc in s.leak_loc:
+                return
+            try:
+                s.possible_loc.remove(loc)
+            except KeyError:
+                pass
+        s.bot_loc = path[-1]
+        s.scan_box_leak(s.bot_loc[0], s.bot_loc[1])
+    s.found = False
+    s.known_loc.remove(s.bot_loc)
+    while not s.found:
+        cc = s.get_closest_val_in_set(s.known_loc)
+        path = s.A_start_path(s.bot_loc, cc)
+        s.total_time += len(path)
+        s.bot_loc = path[-1]
+        if s.bot_loc in s.leak_loc:
+            return
+        s.known_loc.remove(s.bot_loc)
 
 
 def test_bot1(dim: int, k: int) -> float:
@@ -123,68 +310,6 @@ def test_bot4(dim: int, a: float) -> float:
             s.update_given_no_beep(s.bot_loc)
 
 
-def find_first_bot(s: ship_56.Ship) -> None:
-    while not s.detected:
-        closest_cell = s.get_closest_val_in_set(s.possible_loc)
-        path = s.A_start_path(s.bot_loc, closest_cell)
-        s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
-        for loc in path:
-            i, j = loc
-            s.memory[i][j] = IMPOSSIBLE
-            try:
-                s.possible_loc.remove(loc)
-            except KeyError:
-                pass
-            s.total_time += 1
-            if loc in s.leak_loc:
-                s.leak_loc.remove(loc)
-                s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
-                return
-        s.bot_loc = path[-1]
-        s.scan_box_leak(s.bot_loc[0],s.bot_loc[1])
-    s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
-    while s.known_loc:
-        cc = s.get_closest_val_in_set(s.known_loc)
-        ci, cj = cc
-        s.memory[ci][cj] = IMPOSSIBLE
-        path = s.A_start_path(s.bot_loc,cc)
-        s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
-        s.total_time += len(path)
-        s.bot_loc = path[-1]
-        s.known_loc.remove(cc)
-        if s.bot_loc in s.leak_loc:
-            s.leak_loc.remove(s.bot_loc)
-            s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
-    s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
-
-
-def find_second_bot(s: ship_56.Ship) -> None:
-    s.detected = False
-    while not s.detected:
-        cc = s.get_closest_val_in_set(s.possible_loc)
-        path = s.A_start_path(s.bot_loc,cc)
-        for loc in path:
-            s.total_time += 1
-            if loc in s.leak_loc:
-                return
-            try:
-                s.possible_loc.remove(loc)
-            except KeyError:
-                pass
-        s.bot_loc = path[-1]
-        s.scan_box_leak(s.bot_loc[0],s.bot_loc[1])
-    s.found = False
-    s.known_loc.remove(s.bot_loc)
-    while not s.found:
-        cc = s.get_closest_val_in_set(s.known_loc)
-        path = s.A_start_path(s.bot_loc,cc)
-        s.total_time += len(path)
-        s.bot_loc = path[-1]
-        if s.bot_loc in s.leak_loc:
-            return
-        s.known_loc.remove(s.bot_loc)
-
-
 def test_bot5(dim: int, k: int) -> float:
     s = ship_56.Ship(dim, BOT_5, k)
     find_first_bot(s)
@@ -192,6 +317,54 @@ def test_bot5(dim: int, k: int) -> float:
         return s.total_time
     find_second_bot(s)
     return s.total_time
+
+
+def test_bot6A(dim: int, k: int) -> float:
+    s = ship_56.Ship(dim, BOT_6, k)
+    find_first_bot_6A(s)
+    if not s.leak_loc:
+        return s.total_time
+    find_second_bot_6A(s)
+    return s.total_time
+
+
+def test_bot6B(dim: int, k: int) -> float:
+    s = ship_56.Ship(dim, BOT_6, k)
+    find_first_bot_6B(s)
+    if not s.leak_loc:
+        return s.total_time
+    find_second_bot_6B(s)
+    return s.total_time
+
+
+def test_bot6C(dim: int, k: int) -> float:
+    if k < 5:
+        return test_bot6A(dim, k)
+    return test_bot6B(dim, k)
+
+
+def test_bot7(dim: int, a: float) -> float:
+    s = ship_789.Ship(dim, BOT_7, a)
+    s.max_pair[1] = s.get_max_loc()
+    while s.leak_loc:
+        next_cell = s.max_pair[1]
+        path_to_next_cell = s.A_start_path(s.bot_loc, next_cell)
+        for loc in path_to_next_cell:
+            s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
+            s.bot_loc = loc
+            s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
+            s.total_time += 1
+            if s.bot_loc in s.leak_loc:
+                s.leak_loc.remove(s.bot_loc)
+                if len(s.leak_loc) == 0:
+                    return s.total_time
+            if s.bot_loc in s.possible_loc:
+                s.update_all_not_found(s.bot_loc)
+        beeped = s.scan()
+        if beeped:
+            s.update_given_beep(s.bot_loc)
+        else:
+            s.update_given_no_beep(s.bot_loc)
 
 
 def k_tester(trial_count, bot):
@@ -207,6 +380,8 @@ def k_tester(trial_count, bot):
                 ts += test_bot2C(50, k)  # change test function to test different versions of bot 2
             elif bot == BOT_5:
                 ts += test_bot5(50,k)
+            elif bot == BOT_6:
+                ts += test_bot6C(50, k)
             if i % 50 == 0:
                 print("k:", k, "i:", i, " time:", ts / t)
         output.append(ts / t)
@@ -221,7 +396,11 @@ def alpha_tester(trial_count, bot):
         for i in range(trial_count):
             t += 1
             if bot == BOT_3:
-                ts += test_bot4(50, a)  # change test function for bot
+                ts += test_bot3(50, a)
+            elif bot == BOT_4:
+                ts += test_bot4(50, a)
+            elif bot == BOT_7:
+                ts += test_bot7(50, a)
             if i % 50 == 0:
                 print("a:", a, "i:", i, " time:", ts / t)
         output.append(ts / t)
@@ -229,4 +408,4 @@ def alpha_tester(trial_count, bot):
 
 
 if __name__ == '__main__':
-    k_tester(400, BOT_2)
+    alpha_tester(400,BOT_7)
