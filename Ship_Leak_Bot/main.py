@@ -72,7 +72,7 @@ def test_bot2B(dim: int, k: int) -> float:
 
 
 def test_bot2C(dim: int, k: int) -> float:
-    if k < 5:
+    if k <= 6:
         return test_bot2A(dim, k)
     return test_bot2B(dim, k)
 
@@ -135,7 +135,6 @@ def find_first_bot(s: ship_56.Ship) -> None:
                 s.possible_loc.remove(loc)
             except KeyError:
                 pass
-
             s.total_time += 1
             if loc in s.leak_loc:
                 s.leak_loc.remove(loc)
@@ -174,20 +173,25 @@ def find_second_bot(s: ship_56.Ship) -> None:
                 pass
         s.bot_loc = path[-1]
         s.scan_box_leak(s.bot_loc[0],s.bot_loc[1])
-    print(s)
+    s.found = False
+    s.known_loc.remove(s.bot_loc)
+    while not s.found:
+        cc = s.get_closest_val_in_set(s.known_loc)
+        path = s.A_start_path(s.bot_loc,cc)
+        s.total_time += len(path)
+        s.bot_loc = path[-1]
+        if s.bot_loc in s.leak_loc:
+            return
+        s.known_loc.remove(s.bot_loc)
 
 
 def test_bot5(dim: int, k: int) -> float:
     s = ship_56.Ship(dim, BOT_5, k)
-    print(s)
     find_first_bot(s)
-    print(s)
-    print(s.possible_loc)
-    print(s.bot_loc)
-    print(s.leak_loc)
     if not s.leak_loc:
         return s.total_time
     find_second_bot(s)
+    return s.total_time
 
 
 def k_tester(trial_count, bot):
@@ -195,12 +199,14 @@ def k_tester(trial_count, bot):
     for k in range(1, 25):  # k values from 1 to 24 (largest range for 50x50 ship)
         t = 0
         ts = 0
-        for i in range(trial_count):  # 1000 trials per k value
+        for i in range(trial_count):  # trials per k value
             t += 1
             if bot == BOT_1:
                 ts += test_bot1(50, k)
             elif bot == BOT_2:
                 ts += test_bot2C(50, k)  # change test function to test different versions of bot 2
+            elif bot == BOT_5:
+                ts += test_bot5(50,k)
             if i % 50 == 0:
                 print("k:", k, "i:", i, " time:", ts / t)
         output.append(ts / t)
@@ -223,5 +229,4 @@ def alpha_tester(trial_count, bot):
 
 
 if __name__ == '__main__':
-    for i in range(1):
-        print(test_bot5(5,1))
+    k_tester(400, BOT_2)

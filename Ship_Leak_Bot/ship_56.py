@@ -406,7 +406,7 @@ class Ship:
             neighbors = [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
             for neighbor in neighbors:
                 ni, nj = neighbor
-                if self.on_ship(ni, nj) and neighbor not in visited and self.layout[i][j] != WALL:
+                if self.on_ship(ni, nj) and neighbor not in visited and self.layout[ni][nj] != WALL:
                     new = [curr_dist + 1, get_distance(neighbor[0], neighbor[1], ei, ej),
                            neighbor, curr]
                     existing = key.get(neighbor, None)
