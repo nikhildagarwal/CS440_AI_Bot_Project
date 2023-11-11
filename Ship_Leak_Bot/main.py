@@ -362,9 +362,33 @@ def test_bot7(dim: int, a: float) -> float:
                 s.update_all_not_found(s.bot_loc)
         beeped = s.scan()
         if beeped:
-            s.update_given_beep(s.bot_loc)
+            s.update_given_beep_7(s.bot_loc)
         else:
-            s.update_given_no_beep(s.bot_loc)
+            s.update_given_no_beep_7(s.bot_loc)
+
+
+def test_bot8(dim: int, a: float) -> float:
+    s = ship_789.Ship(dim, BOT_8, a)
+    s.max_pair[1] = s.get_max_loc()
+    while s.leak_loc:
+        next_cell = s.max_pair[1]
+        path_to_next_cell = s.A_start_path(s.bot_loc, next_cell)
+        for loc in path_to_next_cell:
+            s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
+            s.bot_loc = loc
+            s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
+            s.total_time += 1
+            if s.bot_loc in s.leak_loc:
+                s.leak_loc.remove(s.bot_loc)
+                if len(s.leak_loc) == 0:
+                    return s.total_time
+            if s.bot_loc in s.possible_loc:
+                s.update_all_not_found(s.bot_loc)
+        beeped = s.scan()
+        if beeped:
+            s.update_given_beep_8(s.bot_loc)
+        else:
+            s.update_given_no_beep_8(s.bot_loc)
 
 
 def k_tester(trial_count, bot):

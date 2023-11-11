@@ -24,7 +24,7 @@ class Ship:
         :param dim: size of the ship
         :param bot: type of bot
         """
-        self.max_pair = [0,None]
+        self.max_pair = [0.0,None]
         self.detected = False
         self.alpha = alpha
         self.found = False
@@ -299,17 +299,21 @@ class Ship:
         self.total_time += 1
         path = self.A_start_path(self.bot_loc,self.leak_loc[0])
         d1 = len(path)
-        path = self.A_start_path(self.bot_loc,self.leak_loc[1])
-        d2 = len(path)
-        beep_prob = math.exp(-1*self.alpha*(d1-1))
-        bp1 = math.exp(-1*self.alpha*(d2-1))
-        r = random.uniform(0,0.99)
+        beep_prob1 = math.exp(-1*self.alpha*(d1-1))
         r1 = random.uniform(0,0.99)
-        if r < beep_prob or r1 < bp1:
+        if len(self.leak_loc) == 2:
+            sp = self.A_start_path(self.bot_loc,self.leak_loc[1])
+            d2 = len(sp)
+            beep_prob2 = math.exp(-1*self.alpha*(d2-1))
+            r2 = random.uniform(0,0.99)
+            if r1 < beep_prob1 or r2 < beep_prob2:
+                return True
+            return False
+        if r1 < beep_prob1:
             return True
         return False
 
-    def update_given_no_beep(self, current):
+    def update_given_no_beep_7(self, current):
         self.max_pair[0] = 0
         master = self.distances_to_possible_cells(current)
         marginal_no_beep = 0
@@ -326,7 +330,7 @@ class Ship:
                 self.max_pair[0] = new_val
                 self.max_pair[1] = loc
 
-    def update_given_beep(self, current):
+    def update_given_beep_7(self, current):
         self.max_pair[0] = 0
         master = self.distances_to_possible_cells(current)
         marginal_yes_beep = 0
@@ -334,6 +338,42 @@ class Ship:
             i, j = loc
             yes_beep = math.exp(-1 * self.alpha * (master[loc] - 1))
             marginal_yes_beep += (self.memory[i][j] * yes_beep)
+        for loc in master:
+            i, j = loc
+            yes_beep = math.exp(-1 * self.alpha * (master[loc] - 1))
+            new_val = self.memory[i][j] * (yes_beep / marginal_yes_beep)
+            self.memory[i][j] = new_val
+            if new_val > self.max_pair[0]:
+                self.max_pair[0] = new_val
+                self.max_pair[1] = loc
+
+    def update_given_no_beep_8(self, current):
+        self.max_pair[0] = 0
+        master = self.distances_to_possible_cells(current)
+        marginal_no_beep = 0
+        for loc in master:
+            i, j = loc
+            no_beep = 1 - math.exp(-1 * self.alpha * (master[loc] - 1))
+            marginal_no_beep += (self.memory[i][j] * no_beep)
+        marginal_no_beep *= 2
+        for loc in master:
+            i, j = loc
+            no_beep = 1 - math.exp(-1 * self.alpha * (master[loc] - 1))
+            new_val = self.memory[i][j] * (no_beep / marginal_no_beep)
+            self.memory[i][j] = new_val
+            if new_val > self.max_pair[0]:
+                self.max_pair[0] = new_val
+                self.max_pair[1] = loc
+
+    def update_given_beep_8(self,current):
+        self.max_pair[0] = 0
+        master = self.distances_to_possible_cells(current)
+        marginal_yes_beep = 0
+        for loc in master:
+            i, j = loc
+            yes_beep = math.exp(-1 * self.alpha * (master[loc] - 1))
+            marginal_yes_beep += (self.memory[i][j] * yes_beep)
+        marginal_yes_beep *= 2
         for loc in master:
             i, j = loc
             yes_beep = math.exp(-1 * self.alpha * (master[loc] - 1))
