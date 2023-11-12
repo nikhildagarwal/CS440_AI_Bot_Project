@@ -425,6 +425,8 @@ def alpha_tester(trial_count, bot):
                 ts += test_bot4(50, a)
             elif bot == BOT_7:
                 ts += test_bot7(50, a)
+            elif bot == BOT_8:
+                ts += test_bot8(50, a)
             if i % 50 == 0:
                 print("a:", a, "i:", i, " time:", ts / t)
         output.append(ts / t)
@@ -432,4 +434,4 @@ def alpha_tester(trial_count, bot):
 
 
 if __name__ == '__main__':
-    alpha_tester(400,BOT_7)
+    alpha_tester(400,BOT_8)
