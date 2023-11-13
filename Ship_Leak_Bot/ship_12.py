@@ -24,15 +24,24 @@ LEAK = 2
 
 
 def get_distance(x1, y1, x2, y2):
+    """
+    Calculates distance between two coordinate points
+    :param x1: int x1
+    :param y1: int y1
+    :param x2: int x2
+    :param y2: int y2
+    :return: float value of the distance between points
+    """
     return pow(pow(y2 - y1, 2) + pow(x2 - x1, 2), 0.5)
 
 
 class Ship:
     def __init__(self, dim, bot, k):
         """
-        Create the ship
-        :param dim: size of the ship
-        :param bot: type of bot
+        Init function for Ship object
+        :param dim: size of ship
+        :param bot: type of bot to place
+        :param k: size of scanner for bot 1 and bot 2
         """
         self.known_loc = []
         if k > dim:
@@ -80,7 +89,6 @@ class Ship:
         # open all cells while following rules (also keep track of dead end cells)
         c = 0
         # while there are still cells to open
-        # print("Enter 1")
         while len(A) > 0:
             # select random cell to open among the cells that are openable
             random_index = random.randint(0, len(A) - 1)
@@ -121,7 +129,6 @@ class Ship:
                 dead_end_cells.append(to_open)
             c += 1
         decl = int(len(dead_end_cells) / 2)
-        # print("Exit 1")
         # purge half of the dead ends
         for i in range(decl):
             r_index = random.randint(0, len(dead_end_cells) - 1)
@@ -136,7 +143,6 @@ class Ship:
                 self.possible_loc.add(w_tup)
         # place bot
         to_place = [bot]
-        # print("Enter 2")
         while len(to_place) > 0:
             ri = random.randint(0, dim - 1)
             rj = random.randint(0, dim - 1)
@@ -147,9 +153,7 @@ class Ship:
                 self.impossible_loc.add(self.bot_loc)
                 self.possible_loc.remove(self.bot_loc)
                 self.clear_box(ri, rj, k, IMPOSSIBLE)
-        # print("Exit 2")
         # place leak
-        # print("Enter 3")
         to_place = [LEAK]
         self.leak_loc = []
         while len(to_place) > 0:
@@ -159,7 +163,6 @@ class Ship:
             self.layout[ri][rj] = to_place.pop(0)
             # store the location of the leak as a set (used in bot_2)
             self.leak_loc.append((ri, rj))
-        # print("Exit 3")
 
     def get_adj_value(self, i, j, value):
         """
@@ -266,10 +269,10 @@ class Ship:
 
     def next_cell_bot2A(self):
         i, j = self.bot_loc
-        dr = min(i + (2*self.k) + 1, self.dim -1)
-        ur = max(i - (2*self.k) - 1, 0)
-        rc = min(j + (2*self.k) + 1, self.dim - 1)
-        lc = max(j - (2*self.k) - 1, 0)
+        dr = min(i + (2 * self.k) + 1, self.dim - 1)
+        ur = max(i - (2 * self.k) - 1, 0)
+        rc = min(j + (2 * self.k) + 1, self.dim - 1)
+        lc = max(j - (2 * self.k) - 1, 0)
         drb = i + self.k
         urb = i - self.k
         rcb = j + self.k
@@ -279,20 +282,20 @@ class Ship:
             while (self.layout[i][lc] == WALL or self.memory[i][lc] == IMPOSSIBLE) and lc < lcb:
                 lc += 1
             if lc < lcb:
-                z_count = self.scan_for_possible(i,lc)
+                z_count = self.scan_for_possible(i, lc)
                 if z_count > mt[0][0]:
-                    mt = [[z_count,i,lc]]
+                    mt = [[z_count, i, lc]]
                 elif z_count == mt[0][0]:
-                    mt.append([z_count,i,lc])
+                    mt.append([z_count, i, lc])
         if dr > drb:
             while (self.layout[dr][j] == WALL or self.memory[dr][j] == IMPOSSIBLE) and dr > drb:
                 dr -= 1
             if dr > drb:
-                z_count = self.scan_for_possible(dr,j)
+                z_count = self.scan_for_possible(dr, j)
                 if z_count > mt[0][0]:
-                    mt = [[z_count,dr,j]]
+                    mt = [[z_count, dr, j]]
                 elif z_count == mt[0][0]:
-                    mt.append([z_count,dr,j])
+                    mt.append([z_count, dr, j])
         if ur < urb:
             while (self.layout[ur][j] == WALL or self.memory[ur][j] == IMPOSSIBLE) and ur < urb:
                 ur += 1
@@ -306,13 +309,13 @@ class Ship:
             while (self.layout[i][rc] == WALL or self.memory[i][rc] == IMPOSSIBLE) and rc > rcb:
                 rc -= 1
             if rc > rcb:
-                z_count = self.scan_for_possible(i,rc)
+                z_count = self.scan_for_possible(i, rc)
                 if z_count > mt[0][0]:
-                    mt = [[z_count,i,rc]]
+                    mt = [[z_count, i, rc]]
                 elif z_count == mt[0][0]:
-                    mt.append([z_count,i,rc])
+                    mt.append([z_count, i, rc])
         if mt[0][0] != 0:
-            ri = random.randint(0,len(mt)-1)
+            ri = random.randint(0, len(mt) - 1)
             return mt[ri][1], mt[ri][2]
         else:
             return self.get_closest_val_in_set(self.possible_loc)
@@ -341,6 +344,12 @@ class Ship:
                         pass
 
     def get_closest_vals_in_set(self, my_set):
+        """
+        Get the closest point in a given set to the current location of the bot
+        Uses euclidian distance to determine distance between cells
+        :param my_set: A given set of tuple objects of form (i, j)
+        :return: A list of distances and their coordinates that are closest to the bot
+        """
         i, j = self.bot_loc
         closest = [[70, None, None]]
         for tup in my_set:
@@ -353,31 +362,44 @@ class Ship:
         return closest
 
     def get_closest_val_in_set(self, my_set):
+        """
+        Does the same as the function above, however, it randomly chooses one of the cells in the final list to return
+        if there are multiple cells to choose from
+        :param my_set: A given set
+        :return: 1 dimensional list with 3 values (distance, x coordinate, y coordinate)
+        """
         i, j = self.bot_loc
-        closest = [[70,None,None]]
+        closest = [[70, None, None]]
         for tup in my_set:
             ni, nj = tup
-            dist = get_distance(ni,nj, i, j)
+            dist = get_distance(ni, nj, i, j)
             if dist < closest[0][0]:
-                closest = [[dist,ni,nj]]
+                closest = [[dist, ni, nj]]
             elif dist == closest[0][0]:
-                closest.append([dist,ni,nj])
-        ri = random.randint(0,len(closest)-1)
+                closest.append([dist, ni, nj])
+        ri = random.randint(0, len(closest) - 1)  # choose random index to return and return the coordinates
+        # at that index
         return closest[ri][1], closest[ri][2]
 
     def A_star(self, goal):
+        """
+        Calculates the path from the current location of the bot to another given cell (goal)
+        :param goal: given tup of form (i, j)
+        :return: None - moves the bot and adds the number of moves to internal object counter within the function
+        Does not need to return anything
+        """
         searchable = []
         si, sj = self.bot_loc
         start = [0, get_distance(si, sj, goal[0], goal[1]), self.bot_loc]
         key = {self.bot_loc: start}
-        heapq.heappush(searchable, start)
+        heapq.heappush(searchable, start)   # init heap for A*
         visited = {0}
         visited.remove(0)
-        while searchable:
+        while searchable:   # While heap has nodes to search
             curr = heapq.heappop(searchable)
             curr_path_sum, curr_dist, curr_loc = curr
             key.pop(curr_loc)
-            if curr_loc == goal:
+            if curr_loc == goal:    # if at goal, move bot to goal and add time elapsed to total time counter
                 self.total_time += curr_path_sum
                 self.layout[self.bot_loc[0]][self.bot_loc[1]] = OPEN
                 self.bot_loc = curr_loc
@@ -387,6 +409,7 @@ class Ship:
             i, j = curr_loc
             nn = np.array([(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)])
             np.random.shuffle(nn)
+            # ensures that the bot randomly chooses which direction to move next when searching
             for c in range(len(nn)):
                 neighbor = tuple(nn[c])
                 ni, nj = neighbor
@@ -394,10 +417,11 @@ class Ship:
                     new = [curr_path_sum + 1, get_distance(neighbor[0], neighbor[1], self.bot_loc[0], self.bot_loc[1]),
                            neighbor]
                     existing = key.get(neighbor, None)
-                    if existing is None:
+                    if existing is None:    # if new node not in heap add to heap
                         heapq.heappush(searchable, new)
                         key[neighbor] = new
-                    else:
+                    else:   # if already in heap, it means we have found faster route to that node
+                        # therefore we update that node
                         if existing[0] > new[0]:
                             existing[0] = new[0]
                             heapq.heapify(searchable)
