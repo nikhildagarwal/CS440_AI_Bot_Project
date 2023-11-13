@@ -77,7 +77,6 @@ bot_8 = [6428.19, 4826.39, 3630.25, 2349.235, 2099.48, 1942.145, 1777.22, 1722.2
          3886.5675, 3863.23, 3896.89]
 
 
-
 def plotter(k_arr: list[int], bot_data: list[list[float]], bot_labels: list[str], bot_colors: list[str],
             setting: str) -> None:
     for bot_arr, label, color in zip(bot_data, bot_labels, bot_colors):
@@ -99,6 +98,6 @@ def plotter(k_arr: list[int], bot_data: list[list[float]], bot_labels: list[str]
 if __name__ == "__main__":
     plotter(k, [bot_5, bot_6C], ["Bot 5", "Bot 6"], ['r', 'black'], 'k')
     plotter(k, [bot_5, bot_6A, bot_6B], ["Bot 5", "Bot 6A", "Bot 6B"], ['r', 'b', 'g'], 'k')
-    plotter(alpha, [bot_3, bot_4, bot_7], ["Bot 3", "Bot 4"], ['r', 'b'], 'alpha')
+    plotter(alpha, [bot_3, bot_4, bot_7,bot_8], ["Bot 3", "Bot 4","b","d"], ['r', 'b','g','black'], 'alpha')
     plotter(k, [bot_1, bot_2A, bot_2B], ["Bot 1", "Bot 2A", "Bot 2B"], ['r', 'b', 'g'], 'k')
     plotter(k, [bot_1, bot_2C], ["Bot 1", "Bot 2"], ['r', 'black'], 'k')
