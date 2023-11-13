@@ -498,37 +498,6 @@ def test_bot7(dim: int, a: float) -> float:
             s.update_given_no_beep_7(s.bot_loc)
 
 
-def test_bot8(dim: int, a: float) -> float:
-    """
-    Generates test environment for bot 8
-    :param dim: size of ship
-    :param a: sensitivity of sensor
-    :return: total time elapsed (total number of moves)
-    """
-    # EXACT same implementation as bot 7 except for how it updates the probabilities
-    s = ship_789.Ship(dim, BOT_8, a)
-    s.max_pair[1] = s.get_max_loc()
-    while s.leak_loc:   # loops until both leaks are found
-        next_cell = s.max_pair[1]
-        path_to_next_cell = s.A_start_path(s.bot_loc, next_cell)
-        for loc in path_to_next_cell:
-            s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
-            s.bot_loc = loc
-            s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
-            s.total_time += 1
-            if s.bot_loc in s.leak_loc:
-                s.leak_loc.remove(s.bot_loc)
-                if len(s.leak_loc) == 0:
-                    return s.total_time
-            if s.bot_loc in s.possible_loc:
-                s.update_all_not_found(s.bot_loc)
-        beeped = s.scan()
-        if beeped:
-            s.update_given_beep_8(s.bot_loc)    # different probability update call function
-        else:
-            s.update_given_no_beep_8(s.bot_loc)     # different probability update call function
-
-
 def k_tester(trial_count, bot):
     """
     Test function to facilitate experimentation for bots with parameter k
@@ -576,8 +545,8 @@ def alpha_tester(trial_count, bot):
             elif bot == BOT_7:
                 ts += test_bot7(50, a)
             elif bot == BOT_8:
-                ts += test_bot8(50, a)
-            if i % 50 == 0:
+                ts += test_bot8(10, a)
+            if i % 1 == 0:
                 print("a:", a, "i:", i, " time:", ts / t)
         output.append(ts / t)
     print(output)
@@ -589,5 +558,5 @@ if __name__ == '__main__':
     Ex: k_tester(200, BOT_5)    # 200 trials per k value for tested on bot 5
     ** NOTE ** The size of all ships are preset to 50x50
     """
-    alpha_tester(400, BOT_8)
+    test_bot8(50, 0.1)
 

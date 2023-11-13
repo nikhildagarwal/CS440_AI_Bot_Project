@@ -347,42 +347,6 @@ class Ship:
                 self.max_pair[0] = new_val
                 self.max_pair[1] = loc
 
-    def update_given_no_beep_8(self, current):
-        self.max_pair[0] = 0
-        master = self.distances_to_possible_cells(current)
-        marginal_no_beep = 0
-        for loc in master:
-            i, j = loc
-            no_beep = 1 - math.exp(-1 * self.alpha * (master[loc] - 1))
-            marginal_no_beep += (self.memory[i][j] * no_beep)
-        marginal_no_beep *= 2
-        for loc in master:
-            i, j = loc
-            no_beep = 1 - math.exp(-1 * self.alpha * (master[loc] - 1))
-            new_val = self.memory[i][j] * (no_beep / marginal_no_beep)
-            self.memory[i][j] = new_val
-            if new_val > self.max_pair[0]:
-                self.max_pair[0] = new_val
-                self.max_pair[1] = loc
-
-    def update_given_beep_8(self,current):
-        self.max_pair[0] = 0
-        master = self.distances_to_possible_cells(current)
-        marginal_yes_beep = 0
-        for loc in master:
-            i, j = loc
-            yes_beep = math.exp(-1 * self.alpha * (master[loc] - 1))
-            marginal_yes_beep += (self.memory[i][j] * yes_beep)
-        marginal_yes_beep *= 2
-        for loc in master:
-            i, j = loc
-            yes_beep = math.exp(-1 * self.alpha * (master[loc] - 1))
-            new_val = self.memory[i][j] * (yes_beep / marginal_yes_beep)
-            self.memory[i][j] = new_val
-            if new_val > self.max_pair[0]:
-                self.max_pair[0] = new_val
-                self.max_pair[1] = loc
-
     def get_max_loc(self):
         i, j = self.bot_loc
         neighbors = [(i+1,j),(i-1,j),(i,j+1),(i,j-1)]
