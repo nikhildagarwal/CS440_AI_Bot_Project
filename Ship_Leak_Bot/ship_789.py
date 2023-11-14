@@ -154,6 +154,9 @@ class Ship:
         init_prob = 1 / len(self.possible_loc)
         for pi, pj in self.possible_loc:
             self.memory[pi][pj] = init_prob
+        if self.bot == BOT_8 or self.bot == BOT_9:
+            for i, j in self.possible_loc:
+                self.memory[i][j] *= 2
 
     def get_adj_value(self, i, j, value):
         """
