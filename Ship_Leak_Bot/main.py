@@ -1,7 +1,8 @@
 import ship_12
 import ship_34
 import ship_56
-import ship_789
+import ship_7
+import ship_89
 from ship_12 import LEAK, WALL, OPEN, BOT_1, BOT_3, BOT_2, BOT_4, BOT_5, BOT_6, BOT_7, BOT_8, BOT_9
 from ship_12 import IMPOSSIBLE, POSSIBLE, KNOWN
 from data import alpha
@@ -15,11 +16,11 @@ def find_first_bot_5(s: ship_56.Ship) -> None:
     attribute variable in the ship object
     """
     while not s.detected:  # while the first leak is not detected
-        closest_cell = s.get_closest_val_in_set(s.possible_loc)     # choose next cell
+        closest_cell = s.get_closest_val_in_set(s.possible_loc)  # choose next cell
         path = s.A_start_path(s.bot_loc, closest_cell)  # get path to next cell with A* algorithm
         s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
-        for loc in path:        # for each coordinate in the path, check if that loc has the leak
-            i, j = loc          # if not move to the end of the path and add the length of the path to the total time
+        for loc in path:  # for each coordinate in the path, check if that loc has the leak
+            i, j = loc  # if not move to the end of the path and add the length of the path to the total time
             s.memory[i][j] = IMPOSSIBLE
             try:
                 s.possible_loc.remove(loc)
@@ -31,7 +32,7 @@ def find_first_bot_5(s: ship_56.Ship) -> None:
                 s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
                 return
         s.bot_loc = path[-1]
-        s.scan_box_leak(s.bot_loc[0],s.bot_loc[1])
+        s.scan_box_leak(s.bot_loc[0], s.bot_loc[1])
     s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
     while s.known_loc:  # once the first leak is detected, check ALL the cells in the known loc set
         # we must check ALL cells since our scanner only gives a binary yes leak or no leak response, it doesn't
@@ -39,7 +40,7 @@ def find_first_bot_5(s: ship_56.Ship) -> None:
         cc = s.get_closest_val_in_set(s.known_loc)
         ci, cj = cc
         s.memory[ci][cj] = IMPOSSIBLE
-        path = s.A_start_path(s.bot_loc,cc)     # get path to the closest cell where the leak may be located
+        path = s.A_start_path(s.bot_loc, cc)  # get path to the closest cell where the leak may be located
         s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
         s.total_time += len(path)
         s.bot_loc = path[-1]
@@ -58,9 +59,9 @@ def find_second_bot_5(s: ship_56.Ship) -> None:
     attribute variable in the ship object
     """
     s.detected = False
-    while not s.detected:   # loops until leak is detected or leak is found by moving into a cell
-        cc = s.get_closest_val_in_set(s.possible_loc)   # get the closest cell where leak could be possible
-        path = s.A_start_path(s.bot_loc,cc)     # A* to find path to that cell
+    while not s.detected:  # loops until leak is detected or leak is found by moving into a cell
+        cc = s.get_closest_val_in_set(s.possible_loc)  # get the closest cell where leak could be possible
+        path = s.A_start_path(s.bot_loc, cc)  # A* to find path to that cell
         for loc in path:
             s.total_time += 1
             if loc in s.leak_loc:
@@ -70,14 +71,14 @@ def find_second_bot_5(s: ship_56.Ship) -> None:
             except KeyError:
                 pass
         s.bot_loc = path[-1]
-        s.scan_box_leak(s.bot_loc[0],s.bot_loc[1])
+        s.scan_box_leak(s.bot_loc[0], s.bot_loc[1])
     s.found = False
     s.known_loc.remove(s.bot_loc)
     while not s.found:  # once leak is detected, search cells in the detected space until leak is found
         # since this function will only be entered given that only once cell was found, once we find a leak
         # we can automatically terminate this loop and exit the function
         cc = s.get_closest_val_in_set(s.known_loc)
-        path = s.A_start_path(s.bot_loc,cc)
+        path = s.A_start_path(s.bot_loc, cc)
         s.total_time += len(path)
         s.bot_loc = path[-1]
         if s.bot_loc in s.leak_loc:
@@ -91,8 +92,8 @@ def find_first_bot_6A(s: ship_56.Ship) -> None:
     :param s: a ship_56 object which is unique to the 2 leak deterministic situation
     :return: None - terminates once a leak is found
     """
-    while not s.detected:   # loops until leak is detected
-        closest_cell = s.next_cell_bot2A()      # Chooses next cell like bot 2A
+    while not s.detected:  # loops until leak is detected
+        closest_cell = s.next_cell_bot2A()  # Chooses next cell like bot 2A
         path = s.A_start_path(s.bot_loc, closest_cell)  # gets path using A*
         s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
         for loc in path:
@@ -108,14 +109,14 @@ def find_first_bot_6A(s: ship_56.Ship) -> None:
                 s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
                 return
         s.bot_loc = path[-1]
-        s.scan_box_leak(s.bot_loc[0],s.bot_loc[1])
+        s.scan_box_leak(s.bot_loc[0], s.bot_loc[1])
     s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
     while s.known_loc:  # searches ALL cells where leak was detected in order to make sure that it does
         # not miss out on the second leak
         cc = s.get_closest_val_in_set(s.known_loc)
         ci, cj = cc
         s.memory[ci][cj] = IMPOSSIBLE
-        path = s.A_start_path(s.bot_loc,cc)
+        path = s.A_start_path(s.bot_loc, cc)
         s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
         s.total_time += len(path)
         s.bot_loc = path[-1]
@@ -133,9 +134,9 @@ def find_second_bot_6A(s: ship_56.Ship) -> None:
     :return: None - terminates once a leak is found
     """
     s.detected = False
-    while not s.detected:   # loops until second leak is detected or leak is found by entering a cell
-        cc = s.next_cell_bot2A()    # chooses cell like bot 2A
-        path = s.A_start_path(s.bot_loc, cc)    # gets path with A* algorithm
+    while not s.detected:  # loops until second leak is detected or leak is found by entering a cell
+        cc = s.next_cell_bot2A()  # chooses cell like bot 2A
+        path = s.A_start_path(s.bot_loc, cc)  # gets path with A* algorithm
         for loc in path:
             s.total_time += 1
             if loc in s.leak_loc:
@@ -182,13 +183,13 @@ def find_first_bot_6B(s: ship_56.Ship) -> None:
                 s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
                 return
         s.bot_loc = path[-1]
-        s.scan_box_leak(s.bot_loc[0],s.bot_loc[1])
+        s.scan_box_leak(s.bot_loc[0], s.bot_loc[1])
     s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
     while s.known_loc:
         cc = s.get_closest_val_in_set(s.known_loc)
         ci, cj = cc
         s.memory[ci][cj] = IMPOSSIBLE
-        path = s.A_start_path(s.bot_loc,cc)
+        path = s.A_start_path(s.bot_loc, cc)
         s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
         s.total_time += len(path)
         s.bot_loc = path[-1]
@@ -208,7 +209,7 @@ def find_second_bot_6B(s: ship_56.Ship) -> None:
     """
     s.detected = False
     while not s.detected:
-        cc = s.next_cell_bot2B()    # ONLY CHANGE - chooses next cell like bot 2B
+        cc = s.next_cell_bot2B()  # ONLY CHANGE - chooses next cell like bot 2B
         path = s.A_start_path(s.bot_loc, cc)
         for loc in path:
             s.total_time += 1
@@ -241,8 +242,8 @@ def test_bot1(dim: int, k: int) -> float:
     :return: total elapsed time (number of moves)
     """
     s = ship_12.Ship(dim, BOT_1, k)
-    while not s.detected:   # loops until first leak is detected
-        closest_cell = s.get_closest_val_in_set(s.possible_loc)     # chooses the closest cell (euclidian distance)
+    while not s.detected:  # loops until first leak is detected
+        closest_cell = s.get_closest_val_in_set(s.possible_loc)  # chooses the closest cell (euclidian distance)
         s.A_star(closest_cell)  # moves to that cell using A* algorithm
         if s.bot_loc == s.leak_loc[0]:
             return s.total_time
@@ -340,11 +341,11 @@ def test_bot3(dim: int, a: float) -> float:
     :param a: sensitivity of sensor
     :return: time elapsed to find leak (number of moves)
     """
-    s = ship_34.Ship(dim, BOT_3, a)     # initialize ship
-    s.max_pair[1] = s.get_max_loc()     # gets the cell that currently has the largest probability of success
+    s = ship_34.Ship(dim, BOT_3, a)  # initialize ship
+    s.max_pair[1] = s.get_max_loc()  # gets the cell that currently has the largest probability of success
     while not s.found:  # loops until the leak is found
         next_cell = s.max_pair[1]
-        path_to_next_cell = s.A_start_path(s.bot_loc, next_cell)    # gets the path to the cell with the
+        path_to_next_cell = s.A_start_path(s.bot_loc, next_cell)  # gets the path to the cell with the
         # highest probability using an A* algorithm
         for loc in path_to_next_cell:
             # checks each cell along the path to see if a cell contains the leak
@@ -377,15 +378,15 @@ def test_bot4(dim: int, a: float) -> float:
     :param a: sensitivity of sensor
     :return: total elapsed time (number of moves the bot takes)
     """
-    s = ship_34.Ship(dim, BOT_3, a)     # init ship
-    s.max_pair[1] = s.get_max_loc()     # get the first cell that the bot will travel too
+    s = ship_34.Ship(dim, BOT_3, a)  # init ship
+    s.max_pair[1] = s.get_max_loc()  # get the first cell that the bot will travel too
     while not s.found:  # loops until the leak is found
-        next_cell = s.get_max_loc_in_grid(5)    # gets the cell with the maximum probability within its
+        next_cell = s.get_max_loc_in_grid(5)  # gets the cell with the maximum probability within its
         # immediate 11x11 grid. If however there are no cells with a probability greater than 0, the bot
         # will REVERT to finding the cell with the max probability anywhere on the ship (same as bot 3)
         if next_cell is None:
             next_cell = s.max_pair[1]
-        path_to_next_cell = s.A_start_path(s.bot_loc, next_cell)    # get path to next cell via A* algorithm
+        path_to_next_cell = s.A_start_path(s.bot_loc, next_cell)  # get path to next cell via A* algorithm
         for loc in path_to_next_cell:
             # same as bot 3 (checks every cell along path)
             s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
@@ -412,10 +413,10 @@ def test_bot5(dim: int, k: int) -> float:
     :return: total time elapsed (number of moves the bot makes)
     """
     s = ship_56.Ship(dim, BOT_5, k)
-    find_first_bot_5(s)     # find the first leak using the functions defined above in this file
-    if not s.leak_loc:      # checks to see if ONLY ONE LEAK WAS FOUND (not both)
+    find_first_bot_5(s)  # find the first leak using the functions defined above in this file
+    if not s.leak_loc:  # checks to see if ONLY ONE LEAK WAS FOUND (not both)
         return s.total_time
-    find_second_bot_5(s)    # find the second leak
+    find_second_bot_5(s)  # find the second leak
     return s.total_time
 
 
@@ -428,10 +429,10 @@ def test_bot6A(dim: int, k: int) -> float:
     """
     # Same as test_bot5 but with different function calls for this bot
     s = ship_56.Ship(dim, BOT_6, k)
-    find_first_bot_6A(s)    # bot 6A function call
+    find_first_bot_6A(s)  # bot 6A function call
     if not s.leak_loc:
         return s.total_time
-    find_second_bot_6A(s)   # bot 6A function call
+    find_second_bot_6A(s)  # bot 6A function call
     return s.total_time
 
 
@@ -444,10 +445,10 @@ def test_bot6B(dim: int, k: int) -> float:
     """
     # Same as test_bot5 except for the function calls to find the first and second leaks
     s = ship_56.Ship(dim, BOT_6, k)
-    find_first_bot_6B(s)        # function call for 6B
+    find_first_bot_6B(s)  # function call for 6B
     if not s.leak_loc:
         return s.total_time
-    find_second_bot_6B(s)       # function call for 6B
+    find_second_bot_6B(s)  # function call for 6B
     return s.total_time
 
 
@@ -472,9 +473,9 @@ def test_bot7(dim: int, a: float) -> float:
     :param a: sensitivity of sensor
     :return: total time elapsed (total number of moves)
     """
-    s = ship_789.Ship(dim, BOT_7, a)
+    s = ship_7.Ship(dim, BOT_7, a)
     s.max_pair[1] = s.get_max_loc()
-    while s.leak_loc:   # proceeds like bot 3 until BOTH leaks are found
+    while s.leak_loc:  # proceeds like bot 3 until BOTH leaks are found
         # updates probabilities exactly like bot 3
         next_cell = s.max_pair[1]
         path_to_next_cell = s.A_start_path(s.bot_loc, next_cell)
@@ -498,7 +499,81 @@ def test_bot7(dim: int, a: float) -> float:
             s.update_given_no_beep_7(s.bot_loc)
 
 
-def k_tester(trial_count, bot):
+def test_bot8(dim: int, a: float) -> float:
+    s = ship_89.Ship(dim, BOT_8, a)
+    s.max_pair[1] = s.get_max_loc()
+    while s.leak_loc:
+        next_cell = s.max_pair[1]
+        path_to_next_cell = s.A_start_path(s.bot_loc, next_cell)
+        for loc in path_to_next_cell:
+            s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
+            s.bot_loc = loc
+            s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
+            s.total_time += 1
+            if s.bot_loc in s.leak_loc:
+                # if a leak is found, it removes the leak from the set of leak locations
+                s.leak_loc.remove(s.bot_loc)
+                if len(s.leak_loc) == 1:
+                    s.preprocess(s.bot_loc)
+                if len(s.leak_loc) == 0:
+                    # if the set of leak locations is 0, meaning both have been found (terminate the loop)
+                    return s.total_time
+            if s.bot_loc in s.possible_loc:
+                if len(s.leak_loc) == 1:
+                    s.update_all_not_found_1_leak(s.bot_loc)
+                else:
+                    s.update_all_not_found_2_leak(s.bot_loc)
+        beeped = s.scan()
+        if beeped:
+            if len(s.leak_loc) == 1:
+                s.update_given_beep_1_leak(s.bot_loc)
+            else:
+                s.update_given_beep_2_leak(s.bot_loc)
+        else:
+            if len(s.leak_loc) == 1:
+                s.update_given_no_beep_1_leak(s.bot_loc)
+            else:
+                s.update_given_no_beep_2_leak(s.bot_loc)
+
+
+def test_bot9(dim: int, a: float) -> float:
+    s = ship_89.Ship(dim, BOT_9, a)
+    s.max_pair[1] = s.get_max_loc()
+    while s.leak_loc:
+        next_cell = s.get_max_loc_in_grid(5)
+        path_to_next_cell = s.A_start_path(s.bot_loc, next_cell)
+        for loc in path_to_next_cell:
+            s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
+            s.bot_loc = loc
+            s.layout[s.bot_loc[0]][s.bot_loc[1]] = s.bot
+            s.total_time += 1
+            if s.bot_loc in s.leak_loc:
+                # if a leak is found, it removes the leak from the set of leak locations
+                s.leak_loc.remove(s.bot_loc)
+                if len(s.leak_loc) == 1:
+                    s.preprocess(s.bot_loc)
+                if len(s.leak_loc) == 0:
+                    # if the set of leak locations is 0, meaning both have been found (terminate the loop)
+                    return s.total_time
+            if s.bot_loc in s.possible_loc:
+                if len(s.leak_loc) == 1:
+                    s.update_all_not_found_1_leak(s.bot_loc)
+                else:
+                    s.update_all_not_found_2_leak(s.bot_loc)
+        beeped = s.scan()
+        if beeped:
+            if len(s.leak_loc) == 1:
+                s.update_given_beep_1_leak(s.bot_loc)
+            else:
+                s.update_given_beep_2_leak(s.bot_loc)
+        else:
+            if len(s.leak_loc) == 1:
+                s.update_given_no_beep_1_leak(s.bot_loc)
+            else:
+                s.update_given_no_beep_2_leak(s.bot_loc)
+
+
+def k_tester(trial_count: int, bot: int) -> None:
     """
     Test function to facilitate experimentation for bots with parameter k
     :param trial_count: number of trials per k value
@@ -516,7 +591,7 @@ def k_tester(trial_count, bot):
             elif bot == BOT_2:
                 ts += test_bot2C(50, k)  # change test function to test different versions of bot 2
             elif bot == BOT_5:
-                ts += test_bot5(50,k)
+                ts += test_bot5(50, k)
             elif bot == BOT_6:
                 ts += test_bot6C(50, k)
             if i % 50 == 0:
@@ -525,7 +600,7 @@ def k_tester(trial_count, bot):
     print(output)
 
 
-def alpha_tester(trial_count, bot):
+def alpha_tester(trial_count: int, bot: int) -> None:
     """
     Test function to facilitate experimentation for bots with parameter a
     :param trial_count: number of trials per k value
@@ -533,7 +608,7 @@ def alpha_tester(trial_count, bot):
     :return: None - Simply output the array to the console
     """
     output = []
-    for a in alpha:     # see the list of alpha values in data.py
+    for a in alpha:  # see the list of alpha values in data.py
         t = 0
         ts = 0
         for i in range(trial_count):
@@ -543,10 +618,12 @@ def alpha_tester(trial_count, bot):
             elif bot == BOT_4:
                 ts += test_bot4(50, a)
             elif bot == BOT_7:
-                ts += test_bot7(50, a)
+                ts += test_bot7(30, a)      # 30 x 30 ship to increase simulation speed
             elif bot == BOT_8:
-                ts += test_bot8(10, a)
-            if i % 1 == 0:
+                ts += test_bot8(30, a)      # 30 x 30 ship to increase simulation speed
+            elif bot == BOT_9:
+                ts += test_bot9(30, a)      # 30 x 30 ship to increase simulation speed
+            if i % 100 == 0:
                 print("a:", a, "i:", i, " time:", ts / t)
         output.append(ts / t)
     print(output)
@@ -558,5 +635,5 @@ if __name__ == '__main__':
     Ex: k_tester(200, BOT_5)    # 200 trials per k value for tested on bot 5
     ** NOTE ** The size of all ships are preset to 50x50
     """
-    test_bot8(50, 0.1)
-
+    alpha_tester(400, BOT_7)
+    alpha_tester(400, BOT_8)

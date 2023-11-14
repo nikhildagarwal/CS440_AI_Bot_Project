@@ -24,7 +24,7 @@ class Ship:
         :param dim: size of the ship
         :param bot: type of bot
         """
-        self.max_pair = [0.0,None]
+        self.max_pair = [0.0, None]
         self.detected = False
         self.alpha = alpha
         self.found = False
@@ -154,9 +154,16 @@ class Ship:
         init_prob = 1 / len(self.possible_loc)
         for pi, pj in self.possible_loc:
             self.memory[pi][pj] = init_prob
-        if self.bot == BOT_8 or self.bot == BOT_9:
-            for i, j in self.possible_loc:
-                self.memory[i][j] *= 2
+        pos_list = list(self.possible_loc)
+        length = len(pos_list)
+        self.pairs = {}
+        n = length - 1
+        prob = 1 / (n * (n + 1) / 2)
+        for i in range(length):
+            for j in range(i + 1, length):
+                cell_j = pos_list[i]
+                cell_k = pos_list[j]
+                self.pairs[(cell_j, cell_k)] = prob
 
     def get_adj_value(self, i, j, value):
         """
@@ -236,7 +243,7 @@ class Ship:
                 path = []
                 head = curr
                 while head[3] is not None:
-                    path.insert(0,head[2])
+                    path.insert(0, head[2])
                     head = head[3]
                 return path
             visited.add(curr_loc)
@@ -257,19 +264,9 @@ class Ship:
                             existing[3] = curr
                             heapq.heapify(searchable)
 
-    def update_all_not_found(self, curr_loc):
-        i, j = curr_loc
-        self.possible_loc.remove(curr_loc)
-        self.impossible_loc.add(curr_loc)
-        pA = self.memory[i][j]
-        self.memory[i][j] = 0.0
-        inv = 1 - pA
-        for ki, kj in self.possible_loc:
-            self.memory[ki][kj] /= inv
-
     def distances_to_possible_cells(self, start):
         master = {}
-        queue = [(start,0)]
+        queue = [(start, 0)]
         in_queue = {start}
         visited = {0}
         visited.remove(0)
@@ -280,35 +277,35 @@ class Ship:
             visited.add(curr)
             if curr in self.possible_loc:
                 master[curr] = lvl
-            ip1 = (i+1,j)
-            im1 = (i-1,j)
-            jp1 = (i, j+1)
-            jm1 = (i, j-1)
-            if self.on_ship(i+1, j) and ip1 not in visited and self.layout[i+1][j] != WALL and ip1 not in in_queue:
+            ip1 = (i + 1, j)
+            im1 = (i - 1, j)
+            jp1 = (i, j + 1)
+            jm1 = (i, j - 1)
+            if self.on_ship(i + 1, j) and ip1 not in visited and self.layout[i + 1][j] != WALL and ip1 not in in_queue:
                 queue.append((ip1, lvl + 1))
                 in_queue.add(ip1)
             if self.on_ship(i - 1, j) and im1 not in visited and self.layout[i - 1][j] != WALL and im1 not in in_queue:
                 queue.append((im1, lvl + 1))
                 in_queue.add(im1)
-            if self.on_ship(i, j+1) and jp1 not in visited and self.layout[i][j + 1] != WALL and jp1 not in in_queue:
+            if self.on_ship(i, j + 1) and jp1 not in visited and self.layout[i][j + 1] != WALL and jp1 not in in_queue:
                 queue.append((jp1, lvl + 1))
                 in_queue.add(jp1)
-            if self.on_ship(i, j-1) and jm1 not in visited and self.layout[i][j-1] != WALL and jm1 not in in_queue:
+            if self.on_ship(i, j - 1) and jm1 not in visited and self.layout[i][j - 1] != WALL and jm1 not in in_queue:
                 queue.append((jm1, lvl + 1))
                 in_queue.add(jm1)
         return master
 
     def scan(self):
         self.total_time += 1
-        path = self.A_start_path(self.bot_loc,self.leak_loc[0])
+        path = self.A_start_path(self.bot_loc, self.leak_loc[0])
         d1 = len(path)
-        beep_prob1 = math.exp(-1*self.alpha*(d1-1))
-        r1 = random.uniform(0,0.99)
+        beep_prob1 = math.exp(-1 * self.alpha * (d1 - 1))
+        r1 = random.uniform(0, 0.99)
         if len(self.leak_loc) == 2:
-            sp = self.A_start_path(self.bot_loc,self.leak_loc[1])
+            sp = self.A_start_path(self.bot_loc, self.leak_loc[1])
             d2 = len(sp)
-            beep_prob2 = math.exp(-1*self.alpha*(d2-1))
-            r2 = random.uniform(0,0.99)
+            beep_prob2 = math.exp(-1 * self.alpha * (d2 - 1))
+            r2 = random.uniform(0, 0.99)
             if r1 < beep_prob1 or r2 < beep_prob2:
                 return True
             return False
@@ -316,7 +313,50 @@ class Ship:
             return True
         return False
 
-    def update_given_no_beep_7(self, current):
+    def update_all_not_found_2_leak(self, curr_loc):
+        i, j = curr_loc
+        self.possible_loc.remove(curr_loc)
+        self.impossible_loc.add(curr_loc)
+        pairs = list(self.pairs.keys())
+        pA = 0
+        for pair in pairs:
+            if curr_loc in pair:
+                pA += self.pairs.pop(pair)
+        inv = 1 - pA
+        for key in self.pairs:
+            self.pairs[key] /= inv
+
+    def update_all_not_found_1_leak(self, curr_loc):
+        i, j = curr_loc
+        self.possible_loc.remove(curr_loc)
+        self.impossible_loc.add(curr_loc)
+        pA = self.memory[i][j]
+        self.memory[i][j] = 0.0
+        inv = 1 - pA
+        for ki, kj in self.possible_loc:
+            self.memory[ki][kj] /= inv
+
+    def update_given_no_beep_2_leak(self, current):
+        self.max_pair[0] = 0
+        master = self.distances_to_possible_cells(current)
+        marginal = 0
+        for key in self.pairs:
+            pjk = self.pairs[key]
+            eq = ((1 - math.exp(-1 * self.alpha * (master[key[0]] - 1))) * (
+                    1 - math.exp(-1 * self.alpha * (master[key[1]] - 1))))
+            marginal += (pjk * eq)
+        for key in self.pairs:
+            PJK = self.pairs[key]
+            EQ = ((1 - math.exp(-1 * self.alpha * (master[key[0]] - 1))) * (
+                    1 - math.exp(-1 * self.alpha * (master[key[1]] - 1))))
+            new_val = PJK * EQ / marginal
+            self.pairs[key] = new_val
+            if new_val > self.max_pair[0]:
+                self.max_pair[0] = new_val
+                ri = random.randint(0, 1)
+                self.max_pair[1] = key[ri]
+
+    def update_given_no_beep_1_leak(self, current):
         self.max_pair[0] = 0
         master = self.distances_to_possible_cells(current)
         marginal_no_beep = 0
@@ -333,7 +373,27 @@ class Ship:
                 self.max_pair[0] = new_val
                 self.max_pair[1] = loc
 
-    def update_given_beep_7(self, current):
+    def update_given_beep_2_leak(self, current):
+        self.max_pair[0] = 0
+        master = self.distances_to_possible_cells(current)
+        marginal = 0
+        for key in self.pairs:
+            pjk = self.pairs[key]
+            eq = 1 - ((1 - math.exp(-1 * self.alpha * (master[key[0]] - 1))) * (
+                        1 - math.exp(-1 * self.alpha * (master[key[1]] - 1))))
+            marginal += (pjk * eq)
+        for key in self.pairs:
+            PJK = self.pairs[key]
+            EQ = 1 - ((1 - math.exp(-1 * self.alpha * (master[key[0]] - 1))) * (
+                        1 - math.exp(-1 * self.alpha * (master[key[1]] - 1))))
+            new_val = PJK * EQ / marginal
+            self.pairs[key] = new_val
+            if new_val > self.max_pair[0]:
+                self.max_pair[0] = new_val
+                ri = random.randint(0, 1)
+                self.max_pair[1] = key[ri]
+
+    def update_given_beep_1_leak(self, current):
         self.max_pair[0] = 0
         master = self.distances_to_possible_cells(current)
         marginal_yes_beep = 0
@@ -352,27 +412,44 @@ class Ship:
 
     def get_max_loc(self):
         i, j = self.bot_loc
-        neighbors = [(i+1,j),(i-1,j),(i,j+1),(i,j-1)]
+        neighbors = [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
         valid = []
         for neighbor in neighbors:
             ni, nj = neighbor
-            if self.on_ship(ni,nj) and self.layout[ni][nj] != WALL:
+            if self.on_ship(ni, nj) and self.layout[ni][nj] != WALL:
                 valid.append(neighbor)
-        ri = random.randint(0,len(valid)-1)
+        ri = random.randint(0, len(valid) - 1)
         return valid[ri]
 
     def get_max_loc_in_grid(self, k):
-        holder = [-1,[]]
+        holder = [-1, []]
         i, j = self.bot_loc
         for r in range(i - k, i + k + 1):
             for c in range(j - k, j + k + 1):
-                tup = (r,c)
-                if self.on_ship(r,c) and tup in self.possible_loc:
+                tup = (r, c)
+                if self.on_ship(r, c) and tup in self.possible_loc:
                     if self.memory[r][c] > holder[0]:
-                        holder = [self.memory[r][c],[tup]]
+                        holder = [self.memory[r][c], [tup]]
                     elif self.memory[r][c] == holder[0]:
                         holder[1].append(tup)
         if not holder[1]:
             return None
-        ri = random.randint(0,len(holder[1])-1)
+        ri = random.randint(0, len(holder[1]) - 1)
         return holder[1][ri]
+
+    def preprocess(self, current):
+        key_list = list(self.pairs.keys())
+        self.possible_loc = {0}
+        self.possible_loc.remove(0)
+        for key in key_list:
+            if key[0] != current:
+                self.possible_loc.add(key[0])
+            if key[1] != current:
+                self.possible_loc.add(key[1])
+        prob = 1 / len(self.possible_loc)
+        for i in range(self.dim):
+            for j in range(self.dim):
+                if (i, j) in self.possible_loc:
+                    self.memory[i][j] = prob
+                else:
+                    self.memory[i][j] = 0
