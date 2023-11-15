@@ -542,7 +542,11 @@ def test_bot9(dim: int, a: float) -> float:
     s = ship_89.Ship(dim, BOT_9, a)
     s.max_pair[1] = s.get_max_loc()
     while s.leak_loc:
-        next_cell = s.get_max_loc_in_grid(5)
+        next_cell = None
+        if len(s.leak_loc) == 1:
+            next_cell = s.get_max_loc_in_grid(5)
+        else:
+            next_cell = s.max_inbound[1]
         if next_cell is None:
             next_cell = s.max_pair[1]
         path_to_next_cell = s.A_start_path(s.bot_loc, next_cell)

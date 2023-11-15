@@ -17,6 +17,10 @@ def get_distance(x1, y1, x2, y2):
     return pow(pow(y2 - y1, 2) + pow(x2 - x1, 2), 0.5)
 
 
+def inbound(loc, ib, jb):
+    return ib[0] <= loc[0] <= ib[1] and jb[0] <= loc[1] <= jb[1]
+
+
 class Ship:
     def __init__(self, dim, bot, alpha):
         """
@@ -24,6 +28,7 @@ class Ship:
         :param dim: size of the ship
         :param bot: type of bot
         """
+        self.max_inbound = [0.0, None]
         self.max_pair = [0.0, None]
         self.detected = False
         self.alpha = alpha
@@ -338,6 +343,11 @@ class Ship:
 
     def update_given_no_beep_2_leak(self, current):
         self.max_pair[0] = 0
+        self.max_inbound[0] = 0
+        self.max_inbound[1] = None
+        i, j = self.bot_loc
+        ib = (i - 5, i + 5)
+        jb = (j - 5, j + 5)
         master = self.distances_to_possible_cells(current)
         marginal = 0
         for key in self.pairs:
@@ -355,6 +365,16 @@ class Ship:
                 self.max_pair[0] = new_val
                 ri = random.randint(0, 1)
                 self.max_pair[1] = key[ri]
+            if new_val > self.max_inbound[0] and (inbound(key[0],ib,jb) or inbound(key[1],ib,jb)):
+                self.max_inbound[0] = new_val
+                d1 = get_distance(i,j,key[0][0],key[0][1])
+                d2 = get_distance(i,j,key[1][0],key[1][1])
+                mind = min(d1,d2)
+                if mind == d1:
+                    self.max_inbound[1] = key[0]
+                else:
+                    self.max_inbound[1] = key[1]
+
 
     def update_given_no_beep_1_leak(self, current):
         self.max_pair[0] = 0
@@ -375,23 +395,37 @@ class Ship:
 
     def update_given_beep_2_leak(self, current):
         self.max_pair[0] = 0
+        self.max_inbound[0] = 0
+        self.max_inbound[1] = None
+        i, j = self.bot_loc
+        ib = (i - 5, i + 5)
+        jb = (j - 5, j + 5)
         master = self.distances_to_possible_cells(current)
         marginal = 0
         for key in self.pairs:
             pjk = self.pairs[key]
             eq = 1 - ((1 - math.exp(-1 * self.alpha * (master[key[0]] - 1))) * (
-                        1 - math.exp(-1 * self.alpha * (master[key[1]] - 1))))
+                    1 - math.exp(-1 * self.alpha * (master[key[1]] - 1))))
             marginal += (pjk * eq)
         for key in self.pairs:
             PJK = self.pairs[key]
             EQ = 1 - ((1 - math.exp(-1 * self.alpha * (master[key[0]] - 1))) * (
-                        1 - math.exp(-1 * self.alpha * (master[key[1]] - 1))))
+                    1 - math.exp(-1 * self.alpha * (master[key[1]] - 1))))
             new_val = PJK * EQ / marginal
             self.pairs[key] = new_val
             if new_val > self.max_pair[0]:
                 self.max_pair[0] = new_val
                 ri = random.randint(0, 1)
                 self.max_pair[1] = key[ri]
+            if new_val > self.max_inbound[0] and (inbound(key[0],ib,jb) or inbound(key[1],ib,jb)):
+                self.max_inbound[0] = new_val
+                d1 = get_distance(i,j,key[0][0],key[0][1])
+                d2 = get_distance(i,j,key[1][0],key[1][1])
+                mind = min(d1,d2)
+                if mind == d1:
+                    self.max_inbound[1] = key[0]
+                else:
+                    self.max_inbound[1] = key[1]
 
     def update_given_beep_1_leak(self, current):
         self.max_pair[0] = 0
