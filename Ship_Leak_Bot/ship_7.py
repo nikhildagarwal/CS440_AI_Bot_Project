@@ -259,6 +259,8 @@ class Ship:
         self.possible_loc.remove(curr_loc)
         self.impossible_loc.add(curr_loc)
         pA = self.memory[i][j]
+        if pA == 1:
+            return "hi"
         self.memory[i][j] = 0.0
         inv = 1 - pA
         for ki, kj in self.possible_loc:

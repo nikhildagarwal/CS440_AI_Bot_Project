@@ -5,7 +5,7 @@ import ship_7
 import ship_89
 from ship_12 import LEAK, WALL, OPEN, BOT_1, BOT_3, BOT_2, BOT_4, BOT_5, BOT_6, BOT_7, BOT_8, BOT_9
 from ship_12 import IMPOSSIBLE, POSSIBLE, KNOWN
-from data import alpha
+from data import alpha, alpha_89
 
 
 def find_first_bot_5(s: ship_56.Ship) -> None:
@@ -491,7 +491,9 @@ def test_bot7(dim: int, a: float) -> float:
                     # if the set of leak locations is 0, meaning both have been found (terminate the loop)
                     return s.total_time
             if s.bot_loc in s.possible_loc:
-                s.update_all_not_found(s.bot_loc)
+                yo = s.update_all_not_found(s.bot_loc)
+                if yo == "hi":
+                    return s.total_time
         beeped = s.scan()
         if beeped:
             s.update_given_beep_7(s.bot_loc)
@@ -541,6 +543,8 @@ def test_bot9(dim: int, a: float) -> float:
     s.max_pair[1] = s.get_max_loc()
     while s.leak_loc:
         next_cell = s.get_max_loc_in_grid(5)
+        if next_cell is None:
+            next_cell = s.max_pair[1]
         path_to_next_cell = s.A_start_path(s.bot_loc, next_cell)
         for loc in path_to_next_cell:
             s.layout[s.bot_loc[0]][s.bot_loc[1]] = OPEN
@@ -608,25 +612,36 @@ def alpha_tester(trial_count: int, bot: int) -> None:
     :return: None - Simply output the array to the console
     """
     output = []
-    for a in alpha:  # see the list of alpha values in data.py
-        t = 0
-        ts = 0
-        for i in range(trial_count):
-            t += 1
-            if bot == BOT_3:
-                ts += test_bot3(50, a)
-            elif bot == BOT_4:
-                ts += test_bot4(50, a)
-            elif bot == BOT_7:
-                ts += test_bot7(30, a)      # 30 x 30 ship to increase simulation speed
-            elif bot == BOT_8:
-                ts += test_bot8(30, a)      # 30 x 30 ship to increase simulation speed
-            elif bot == BOT_9:
-                ts += test_bot9(30, a)      # 30 x 30 ship to increase simulation speed
-            if i % 100 == 0:
-                print("a:", a, "i:", i, " time:", ts / t)
-        output.append(ts / t)
-    print(output)
+    if bot == BOT_8 or bot == BOT_9 or bot == BOT_7:
+        for a in alpha_89:  # see the list of alpha values in data.py
+            t = 0
+            ts = 0
+            for i in range(trial_count):
+                t += 1
+                if bot == BOT_8:
+                    ts += test_bot8(30, a)      # 30 x 30 ship to increase simulation speed
+                elif bot == BOT_7:
+                    ts += test_bot7(30, a)
+                elif bot == BOT_9:
+                    ts += test_bot9(30, a)      # 30 x 30 ship to increase simulation speed
+                if i % 1 == 0:
+                    print("a:", a, "i:", i, " time:", ts / t)
+            output.append(ts / t)
+        print(output)
+    else:
+        for a in alpha:  # see the list of alpha values in data.py
+            t = 0
+            ts = 0
+            for i in range(trial_count):
+                t += 1
+                if bot == BOT_3:
+                    ts += test_bot3(30, a)      # 30 x 30 ship to increase simulation speed
+                elif bot == BOT_4:
+                    ts += test_bot4(30, a)      # 30 x 30 ship to increase simulation speed
+                if i % 1 == 0:
+                    print("a:", a, "i:", i, " time:", ts / t)
+            output.append(ts / t)
+        print(output)
 
 
 if __name__ == '__main__':
@@ -635,5 +650,4 @@ if __name__ == '__main__':
     Ex: k_tester(200, BOT_5)    # 200 trials per k value for tested on bot 5
     ** NOTE ** The size of all ships are preset to 50x50
     """
-    alpha_tester(400, BOT_7)
-    alpha_tester(400, BOT_8)
+    alpha_tester(201, BOT_8)
