@@ -502,6 +502,12 @@ def test_bot7(dim: int, a: float) -> float:
 
 
 def test_bot8(dim: int, a: float) -> float:
+    """
+    Generate test environment for bot8. Loops until both leaks are found
+    :param dim: dimension of the ship
+    :param a: alpha parameter for sensor
+    :return: the total time elapsed (number of moves bot takes to plug both leaks)
+    """
     s = ship_89.Ship(dim, BOT_8, a)
     s.max_pair[1] = s.get_max_loc()
     while s.leak_loc:
@@ -516,7 +522,7 @@ def test_bot8(dim: int, a: float) -> float:
                 # if a leak is found, it removes the leak from the set of leak locations
                 s.leak_loc.remove(s.bot_loc)
                 if len(s.leak_loc) == 1:
-                    s.preprocess(s.bot_loc)
+                    s.preprocess(s.bot_loc)     # make sure we can transition to one leak situation
                 if len(s.leak_loc) == 0:
                     # if the set of leak locations is 0, meaning both have been found (terminate the loop)
                     return s.total_time
@@ -539,6 +545,13 @@ def test_bot8(dim: int, a: float) -> float:
 
 
 def test_bot9(dim: int, a: float) -> float:
+    """
+    Generate test environment for bot9. Loops until both leaks are found
+    Different from bot8 in that we search locally for the highest probability. The search grid has size of 11x11.
+    :param dim: dimension of the ship
+    :param a: alpha parameter for sensor
+    :return: the total time elapsed (number of moves bot takes to plug both leaks)
+    """
     s = ship_89.Ship(dim, BOT_9, a)
     s.max_pair[1] = s.get_max_loc()
     while s.leak_loc:
@@ -654,4 +667,4 @@ if __name__ == '__main__':
     Ex: k_tester(200, BOT_5)    # 200 trials per k value for tested on bot 5
     ** NOTE ** The size of all ships are preset to 50x50
     """
-    alpha_tester(201, BOT_8)
+    alpha_tester(201, BOT_9)    # for example test bot_9

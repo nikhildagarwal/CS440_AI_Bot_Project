@@ -14,6 +14,14 @@ LEAK = 2
 
 
 def get_distance(x1, y1, x2, y2):
+    """
+    Calculates distance between two coordinate points
+    :param x1: int x1
+    :param y1: int y1
+    :param x2: int x2
+    :param y2: int y2
+    :return: float value of the distance between points
+    """
     return pow(pow(y2 - y1, 2) + pow(x2 - x1, 2), 0.5)
 
 
@@ -214,6 +222,13 @@ class Ship:
         return 0 <= i < self.dim and 0 <= j < self.dim
 
     def A_start_path(self, beg, end):
+        """
+        A* algorithm to calculate the path from cell 'beg' to cell 'end'
+        cells are passed in as a tuple of form (x,y)
+        :param beg: start cell
+        :param end: end cell
+        :return: path as a list of tuples Ex: [(0,1),(4,2)]
+        """
         searchable = []
         ei, ej = end
         start = [0, 0, beg, None]
@@ -251,6 +266,12 @@ class Ship:
                             heapq.heapify(searchable)
 
     def update_all_not_found(self, curr_loc):
+        """
+        Updates the probabilities in the bots probability matrix in the event that
+        we enter a cell and do not find a leak
+        :param curr_loc: current location of the bot (as a tuple)
+        :return: None if all is well, "hi" if we try and update a probability after a leak is found (error handling)
+        """
         i, j = curr_loc
         self.possible_loc.remove(curr_loc)
         self.impossible_loc.add(curr_loc)
@@ -261,6 +282,14 @@ class Ship:
             self.memory[ki][kj] /= inv
 
     def distances_to_possible_cells(self, start):
+        """
+        When calculating probabilities, we need the distance from the bots current location to every other cell
+        in the ship where leak could be possible
+        To do this I use a BFS algorithm
+        :param start: initial cell that we want to run BFS out from
+        :return: A dictionary object where key values are a tuple of form (x,y) and the values are the
+        distances as an integer (number of moves needed to reach that cell from the bots' location)
+        """
         master = {}
         queue = [(start,0)]
         in_queue = {start}
@@ -292,6 +321,10 @@ class Ship:
         return master
 
     def scan(self):
+        """
+        Scans the ship and returns True if the bot received a beep and false otherwise.
+        :return: True if received beep, False otherwise
+        """
         self.total_time += 1
         path = self.A_start_path(self.bot_loc,self.leak_loc[0])
         d = len(path)
@@ -302,14 +335,20 @@ class Ship:
         return False
 
     def update_given_no_beep(self, current):
+        """
+        Given no beep update probabilities
+        We also calculate the cell with the maximum probability in place
+        :param current: current location of the bot
+        :return: None, since we update probabilities in place
+        """
         self.max_pair[0] = 0
         master = self.distances_to_possible_cells(current)
         marginal_no_beep = 0
-        for loc in master:
+        for loc in master:  # this loop takes care of the marginalization part of the equation
             i, j = loc
             no_beep = 1 - math.exp(-1 * self.alpha * (master[loc] - 1))
             marginal_no_beep += (self.memory[i][j] * no_beep)
-        for loc in master:
+        for loc in master:  # for each cell J we update its probabilities
             i, j = loc
             no_beep = 1 - math.exp(-1 * self.alpha * (master[loc] - 1))
             new_val = self.memory[i][j] * (no_beep / marginal_no_beep)
@@ -319,14 +358,20 @@ class Ship:
                 self.max_pair[1] = loc
 
     def update_given_beep(self, current):
+        """
+        Given beep update probabilities
+        Also calculate the cell with the maximum probability in place.
+        :param current: current location of the bot
+        :return: None, since we update probabilities in place
+        """
         self.max_pair[0] = 0
         master = self.distances_to_possible_cells(current)
         marginal_yes_beep = 0
-        for loc in master:
+        for loc in master:  # this loop takes care of the marginalization part of the equation
             i, j = loc
             yes_beep = math.exp(-1 * self.alpha * (master[loc] - 1))
             marginal_yes_beep += (self.memory[i][j] * yes_beep)
-        for loc in master:
+        for loc in master:  # for each cell J we update its probabilities
             i, j = loc
             yes_beep = math.exp(-1 * self.alpha * (master[loc] - 1))
             new_val = self.memory[i][j] * (yes_beep / marginal_yes_beep)
@@ -336,6 +381,10 @@ class Ship:
                 self.max_pair[1] = loc
 
     def get_max_loc(self):
+        """
+        search adjacent cells to the bot and get the cell with the maximum probability
+        :return: Tuple of form (x, y)
+        """
         i, j = self.bot_loc
         neighbors = [(i+1,j),(i-1,j),(i,j+1),(i,j-1)]
         valid = []
@@ -347,6 +396,11 @@ class Ship:
         return valid[ri]
 
     def get_max_loc_in_grid(self, k):
+        """
+        search all cells within a 2k+1x2k-1, and get the cell with the maximum probability
+        :param k: size of the grid (bot is centered in this grid)
+        :return: tup in form (x, y)
+        """
         holder = [-1,[]]
         i, j = self.bot_loc
         for r in range(i - k, i + k + 1):

@@ -319,7 +319,6 @@ class Ship:
         return False
 
     def update_all_not_found_2_leak(self, curr_loc):
-        i, j = curr_loc
         self.possible_loc.remove(curr_loc)
         self.impossible_loc.add(curr_loc)
         pairs = list(self.pairs.keys())

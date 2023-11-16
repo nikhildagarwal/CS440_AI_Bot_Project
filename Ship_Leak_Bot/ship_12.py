@@ -256,6 +256,11 @@ class Ship:
         return count
 
     def next_cell_bot2B(self):
+        """
+        Choose the next cell for bot2B. Chooses the closest cell to the bot that could possibly have the leak.
+        Maximizes the number of unscathed cells given ties
+        :return: tuple in form (x, y)
+        """
         closest = self.get_closest_vals_in_set(self.possible_loc)
         mt = [[0, None, None]]
         for dist, i, j in closest:
@@ -268,6 +273,12 @@ class Ship:
         return mt[ri][1], mt[ri][2]
 
     def next_cell_bot2A(self):
+        """
+        Chooses the next cell for bot 2A.
+        Moves either up, down, left or right 2k+1 cells. Maximizes the number of un-scanned cells in its new range.
+        This gives the bot a higher probability of detected the leak.
+        :return: tuple in form (x, y)
+        """
         i, j = self.bot_loc
         dr = min(i + (2 * self.k) + 1, self.dim - 1)
         ur = max(i - (2 * self.k) - 1, 0)
