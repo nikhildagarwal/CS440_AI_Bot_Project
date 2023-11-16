@@ -14,10 +14,25 @@ LEAK = 2
 
 
 def get_distance(x1, y1, x2, y2):
+    """
+    Calculates distance between two coordinate points
+    :param x1: int x1
+    :param y1: int y1
+    :param x2: int x2
+    :param y2: int y2
+    :return: float value of the distance between points
+    """
     return pow(pow(y2 - y1, 2) + pow(x2 - x1, 2), 0.5)
 
 
 def inbound(loc, ib, jb):
+    """
+    Checks if a cell is withing the bounds of a given rectangle.
+    :param loc: cell as a tuple with form (x, y)
+    :param ib: bounds of x
+    :param jb: bounds of y
+    :return: True if inbound, false otherwise
+    """
     return ib[0] <= loc[0] <= ib[1] and jb[0] <= loc[1] <= jb[1]
 
 
@@ -233,6 +248,13 @@ class Ship:
         return 0 <= i < self.dim and 0 <= j < self.dim
 
     def A_start_path(self, beg, end):
+        """
+        A* algorithm to calculate the path from cell 'beg' to cell 'end'
+        cells are passed in as a tuple of form (x,y)
+        :param beg: start cell
+        :param end: end cell
+        :return: path as a list of tuples Ex: [(0,1),(4,2)]
+        """
         searchable = []
         ei, ej = end
         start = [0, 0, beg, None]
@@ -270,6 +292,14 @@ class Ship:
                             heapq.heapify(searchable)
 
     def distances_to_possible_cells(self, start):
+        """
+        When calculating probabilities, we need the distance from the bots current location to every other cell
+        in the ship where leak could be possible
+        To do this I use a BFS algorithm
+        :param start: initial cell that we want to run BFS out from
+        :return: A dictionary object where key values are a tuple of form (x,y) and the values are the
+        distances as an integer (number of moves needed to reach that cell from the bots' location)
+        """
         master = {}
         queue = [(start, 0)]
         in_queue = {start}
@@ -301,6 +331,11 @@ class Ship:
         return master
 
     def scan(self):
+        """
+        Scans the ship and returns True if the bot received a beep and false otherwise.
+        Takes into account the two leak situation
+        :return: True if received beep, False otherwise
+        """
         self.total_time += 1
         path = self.A_start_path(self.bot_loc, self.leak_loc[0])
         d1 = len(path)
@@ -319,6 +354,12 @@ class Ship:
         return False
 
     def update_all_not_found_2_leak(self, curr_loc):
+        """
+        Updates the probabilities in my dictionary of probabilities for pairs.
+        Sums of probs for all pairs that contain curr_loc
+        :param curr_loc: current location of the bot as a tuple
+        :return: None, since we update probabilities in place
+        """
         self.possible_loc.remove(curr_loc)
         self.impossible_loc.add(curr_loc)
         pairs = list(self.pairs.keys())
@@ -331,6 +372,12 @@ class Ship:
             self.pairs[key] /= inv
 
     def update_all_not_found_1_leak(self, curr_loc):
+        """
+        Updates the probabilities in the bots probability matrix in the event that
+        we enter a cell and do not find a leak
+        :param curr_loc: current location of the bot (as a tuple)
+        :return: None if all is well, "hi" if we try and update a probability after a leak is found (error handling)
+        """
         i, j = curr_loc
         self.possible_loc.remove(curr_loc)
         self.impossible_loc.add(curr_loc)
@@ -341,6 +388,12 @@ class Ship:
             self.memory[ki][kj] /= inv
 
     def update_given_no_beep_2_leak(self, current):
+        """
+        Updates probabilities given there is NO beep for while accounting for the double leak situation.
+        Updates pair probabilities and also calculates the pair with the maximum pair in place.
+        :param current: current location of the bot
+        :return: None, all updates and calculations are done in place
+        """
         self.max_pair[0] = 0
         self.max_inbound[0] = 0
         self.max_inbound[1] = None
@@ -374,8 +427,13 @@ class Ship:
                 else:
                     self.max_inbound[1] = key[1]
 
-
     def update_given_no_beep_1_leak(self, current):
+        """
+        Given no beep update probabilities
+        We also calculate the cell with the maximum probability in place
+        :param current: current location of the bot
+        :return: None, since we update probabilities in place
+        """
         self.max_pair[0] = 0
         master = self.distances_to_possible_cells(current)
         marginal_no_beep = 0
@@ -393,6 +451,12 @@ class Ship:
                 self.max_pair[1] = loc
 
     def update_given_beep_2_leak(self, current):
+        """
+        Updates probabilities given there is beep for while accounting for the double leak situation.
+        Updates pair probabilities and also calculates the pair with the maximum pair in place.
+        :param current: current location of the bot
+        :return: None, all updates and calculations are done in place
+        """
         self.max_pair[0] = 0
         self.max_inbound[0] = 0
         self.max_inbound[1] = None
@@ -427,6 +491,12 @@ class Ship:
                     self.max_inbound[1] = key[1]
 
     def update_given_beep_1_leak(self, current):
+        """
+        Given beep update probabilities
+        Also calculate the cell with the maximum probability in place.
+        :param current: current location of the bot
+        :return: None, since we update probabilities in place
+        """
         self.max_pair[0] = 0
         master = self.distances_to_possible_cells(current)
         marginal_yes_beep = 0
@@ -444,6 +514,10 @@ class Ship:
                 self.max_pair[1] = loc
 
     def get_max_loc(self):
+        """
+        search adjacent cells to the bot and get the cell with the maximum probability
+        :return: Tuple of form (x, y)
+        """
         i, j = self.bot_loc
         neighbors = [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
         valid = []
@@ -455,6 +529,11 @@ class Ship:
         return valid[ri]
 
     def get_max_loc_in_grid(self, k):
+        """
+        search all cells within a 2k+1x2k-1, and get the cell with the maximum probability
+        :param k: size of the grid (bot is centered in this grid)
+        :return: tup in form (x, y)
+        """
         holder = [-1, []]
         i, j = self.bot_loc
         for r in range(i - k, i + k + 1):
@@ -471,6 +550,12 @@ class Ship:
         return holder[1][ri]
 
     def preprocess(self, current):
+        """
+        Preprocess the ship to make sure it is ready to continue the experiment with one leak.
+        Makes sure the ship is identical and ready as the ship for bot 3, 4, and 7
+        :param current: current location of the bot as a tuple
+        :return: None, updates data structure and probabilities in place
+        """
         key_list = list(self.pairs.keys())
         self.possible_loc = {0}
         self.possible_loc.remove(0)
