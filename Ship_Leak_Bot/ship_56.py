@@ -24,6 +24,14 @@ LEAK = 2
 
 
 def get_distance(x1, y1, x2, y2):
+    """
+    Calculates distance between two coordinate points
+    :param x1: int x1
+    :param y1: int y1
+    :param x2: int x2
+    :param y2: int y2
+    :return: float value of the distance between points
+    """
     return pow(pow(y2 - y1, 2) + pow(x2 - x1, 2), 0.5)
 
 
@@ -270,6 +278,11 @@ class Ship:
         return count
 
     def next_cell_bot2B(self):
+        """
+        Choose the next cell for bot2B. Chooses the closest cell to the bot that could possibly have the leak.
+        Maximizes the number of unscathed cells given ties
+        :return: tuple in form (x, y)
+        """
         closest = self.get_closest_vals_in_set(self.possible_loc)
         mt = [[0, None, None]]
         for dist, i, j in closest:
@@ -282,6 +295,12 @@ class Ship:
         return mt[ri][1], mt[ri][2]
 
     def next_cell_bot2A(self):
+        """
+        Chooses the next cell for bot 2A.
+        Moves either up, down, left or right 2k+1 cells. Maximizes the number of un-scanned cells in its new range.
+        This gives the bot a higher probability of detected the leak.
+        :return: tuple in form (x, y)
+        """
         i, j = self.bot_loc
         dr = min(i + (2*self.k) + 1, self.dim -1)
         ur = max(i - (2*self.k) - 1, 0)
@@ -358,6 +377,12 @@ class Ship:
                         pass
 
     def get_closest_vals_in_set(self, my_set):
+        """
+        Get the closest point in a given set to the current location of the bot
+        Uses euclidian distance to determine distance between cells
+        :param my_set: A given set of tuple objects of form (i, j)
+        :return: A list of distances and their coordinates that are closest to the bot
+        """
         i, j = self.bot_loc
         closest = [[70, None, None]]
         for tup in my_set:
@@ -370,6 +395,12 @@ class Ship:
         return closest
 
     def get_closest_val_in_set(self, my_set):
+        """
+        Does the same as the function above, however, it randomly chooses one of the cells in the final list to return
+        if there are multiple cells to choose from
+        :param my_set: A given set
+        :return: 1 dimensional list with 3 values (distance, x coordinate, y coordinate)
+        """
         i, j = self.bot_loc
         closest = [[70,None,None]]
         for tup in my_set:
@@ -383,6 +414,13 @@ class Ship:
         return closest[ri][1], closest[ri][2]
 
     def A_start_path(self, beg, end):
+        """
+        A* algorithm to calculate the path from cell 'beg' to cell 'end'
+        cells are passed in as a tuple of form (x,y)
+        :param beg: start cell
+        :param end: end cell
+        :return: path as a list of tuples Ex: [(0,1),(4,2)]
+        """
         searchable = []
         ei, ej = end
         start = [0, 0, beg, None]
