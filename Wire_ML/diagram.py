@@ -1,6 +1,14 @@
 import numpy as np
 
-colors = np.array(['r', 'b', 'y', 'g'])
+RED = 1
+BLUE = 2
+YELLOW = 3
+GREEN = 4
+
+SAFE = 0
+UNSAFE = 1
+
+colors = np.array([RED, BLUE, YELLOW, GREEN])
 rows = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19])
 columns = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19])
 
@@ -8,6 +16,7 @@ columns = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17
 class Diagram:
     def __init__(self):
         encountered_yellow = False
+        self.intersections = []
         self.image = []
         self.label = None
         for r in range(20):
@@ -19,26 +28,30 @@ class Diagram:
         np.random.shuffle(rows)
         np.random.shuffle(columns)
         for color in colors:
-            if color == 'y':
+            if color == YELLOW:
                 encountered_yellow = True
-            elif color == 'r':
+            elif color == RED:
                 if encountered_yellow:
-                    self.label = "Safe"
+                    self.label = SAFE
                 else:
-                    self.label = "Unsafe"
+                    self.label = UNSAFE
         counter = 0
         for index in range(2):
             ri = rows[index]
             ci = columns[index]
             for d in range(20):
+                if self.image[ri][d] != 0:
+                    self.intersections.append((ri, d))
                 self.image[ri][d] = colors[counter]
             counter += 1
             for d in range(20):
+                if self.image[d][ci] != 0:
+                    self.intersections.append((d, ci))
                 self.image[d][ci] = colors[counter]
             counter += 1
 
     def __str__(self):
-        message = "label: " + self.label + "\n"
+        message = "label: " + str(self.label) + "\n"
         for row in self.image:
             message += str(row) + "\n"
         return message
