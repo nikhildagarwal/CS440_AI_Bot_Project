@@ -105,7 +105,7 @@ for sc in sample_counts:
 print("performance =", performance)
 print("x_vals =", x_vals)
 
-mse_array = train_model("bm1.csv", "bm2.csv", 100000, 0.01)
+mse_array = train_model("bm1.csv", "bm2.csv", 5000, 0.01)
 mse = []
 summer = 0
 total = 0
@@ -113,10 +113,8 @@ for x1, x2 in mse_array:
     summer += ((x1 ** 2) + (x2 ** 2)) / 2
     total += 1
     mse.append(summer / total)
-plt.plot(list(range(1, 100001)), mse)
-plt.xlabel("i-th Sample")
+plt.plot(list(range(1, 5001)), mse)
+plt.xlabel("i-th sample (5000 samples, 0.01 learning rate)")
 plt.ylabel("Average MSE")
 plt.title("Average Mean Squared Error Up to the i-th element (MSE)")
 plt.show()
-accuracy = test_model("bm1.csv", "bm2.csv", 500000)
-print("Accuracy of model trained on 100000 samples and a learning rate of 0.01:", accuracy)
