@@ -28,6 +28,22 @@ x_vals = [500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 1000, 1000, 1000, 10
           60000, 60000, 60000, 60000, 60000, 75000, 75000, 75000, 75000, 75000, 75000, 75000, 75000, 75000, 75000,
           100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000]
 
+max_perf = []
+max_x = []
+c = 0
+for p, x in zip(performance, x_vals):
+    if c % 10 == 9:
+        max_perf.append(p)
+        max_x.append(x)
+    c += 1
+plt.plot(max_x, max_perf, marker='o', markersize=4)
+plt.xticks(max_x, [500, 1000, 2500, 5000, 7500, 10000, 15000, 20000, 25000, 40000, 50000, 60000, 75000, 100000])
+plt.title("Accuracy of Model with learning rate of 0.1")
+plt.xlabel("Training Dataset Sample Count")
+plt.ylabel("Accuracy of Model on Test Dataset (500,000 samples)")
+plt.xticks(rotation=90)
+plt.show()
+
 plt.plot(x_vals, performance, marker='o', markersize=4, linestyle='none')
 plt.xticks(x_vals,
            [500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000,
