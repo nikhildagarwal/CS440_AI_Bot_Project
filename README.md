@@ -1,3 +1,5 @@
+Contains all the code for 3 projects in CS440_Intro_to_AI @ Rutgers
+
 **Fire_Spread_Bot**
 * Implemented Pathfinding algorithms (BFS and A* algorithms) to find the shortest path on a 2D grid
 * Utilized modified cost functions to change decision-making in pathfinding
